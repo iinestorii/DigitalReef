@@ -23,12 +23,12 @@ public:
 	void addTag(std::string);
 	void removeTag(std::string);
 	void pubMessage(RMessage);
-	RMessage subMessage();
+	RMessage* subMessage();
 	RMessage receiveMessage();
 
 private:
 	CJsonObject adr_list;
-	std::list<std::string> tag_list;
+	std::vector<std::string> tag_list;
 	zmq::context_t context;
 	zmq::socket_t publisher;
 	zmq::socket_t subscriber;

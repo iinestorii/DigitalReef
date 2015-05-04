@@ -92,7 +92,7 @@ int Reef::initiate(std::string aka, std::string ip){
 
 //returns true if tag_list contains tag
 bool Reef::findTag(std::string tag){
-	std::list<std::string>::iterator findIter = std::find(tag_list.begin(), tag_list.end(), tag);
+	std::vector<std::string>::iterator findIter = std::find(tag_list.begin(), tag_list.end(), tag);
 	if (findIter != tag_list.end()){
 		return true;
 	}
@@ -111,15 +111,31 @@ void Reef::addTag(std::string tag){
 
 //removes a tag of the tag_list
 void Reef::removeTag(std::string tag){
-	tag_list.remove(tag);
+	tag_list.erase(std::remove(tag_list.begin(), tag_list.end(), tag), tag_list.end());
 }
 
 void Reef::pubMessage(RMessage msg){
-
+	s_sendmore(publisher, "");
+	s_send(publisher, msg.getBody());
 }
 
-RMessage Reef::subMessage(){
-
+//checks via tag_list if Message of interest has arrived
+//returns pointer to interesting message
+//returns null-pointer if no Message of interest was found
+RMessage* Reef::subMessage(){
+	//  Read envelope with address
+	std::string address = s_recv(subscriber);
+	//  Read message contents
+	std::string contents = s_recv(subscriber);
+	
+	RMessage msg;
+	msg.initiateWithJson(contents);
+	if (msg.containsAnyOf(tag_list)){
+		return &msg;
+	}
+	else{
+		return nullptr;
+	}
 }
 
 RMessage Reef::receiveMessage(){
