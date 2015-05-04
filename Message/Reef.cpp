@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 
+
 Reef::Reef() :
 	context(1),
 	publisher(context, ZMQ_PUB),
@@ -89,15 +90,35 @@ int Reef::initiate(std::string aka, std::string ip){
 	return 1;
 }
 
-void Reef::addTag(std::string tag){
-
+//returns true if tag_list contains tag
+bool Reef::findTag(std::string tag){
+	std::list<std::string>::iterator findIter = std::find(tag_list.begin(), tag_list.end(), tag);
+	if (findIter != tag_list.end()){
+		return true;
+	}
+	else{
+		return false;
+	}
 }
 
-void Reef::removeTag(std::string tag){
+//adds a tag to the tag_list if it isn't already in there
+//tag_list is used to filter incoming subscription messages for data of interest
+void Reef::addTag(std::string tag){
+	if (!findTag(tag)){
+		tag_list.push_back(tag);
+	}	
+}
 
+//removes a tag of the tag_list
+void Reef::removeTag(std::string tag){
+	tag_list.remove(tag);
 }
 
 void Reef::pubMessage(RMessage msg){
+
+}
+
+RMessage Reef::subMessage(){
 
 }
 
@@ -112,9 +133,17 @@ RMessage Reef::receiveMessage(){
 
 	iss >> aka >> ip;
 	adr_list.AddPare(aka, ip);
-	//publish new Reef member, Subscriber add them to their adr_list and sub to it's publisher
+	
+	//build RMessage with aka and ip to inform Reef about the new Member
+	RMessage pubMember;
+	pubMember.addSimplex("aka",aka);
+	pubMember.addSimplex("ip", ip);
+	pubMember.addTag("SYS_newMember");
 
-	//reply with adr_list
+	//publish the pubMember Message in the Reef
+	pubMessage(pubMember);
+
+	//reply to new Coral with adr_list
 	std::string adr_list_str = adr_list.ToString();
 
 	//determine length of message for the char buffer
@@ -125,6 +154,6 @@ RMessage Reef::receiveMessage(){
 
 	memcpy((void *)reply.data(), adr_list_str.c_str(), msg_length);
 
-	//sends Message to Reef
+	//sends Message to new Coral
 	req.send(reply);
 }
