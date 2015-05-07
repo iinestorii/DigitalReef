@@ -42,12 +42,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\Message;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\src\include;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\zeromq-4.1.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\Message;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\vspro\jsonplus\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\lib;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\vspro\jsonplus\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\Message;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\src\include;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\zeromq-4.1.0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\Message;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\vspro\jsonplus\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\lib;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\vspro\jsonplus\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -56,7 +56,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

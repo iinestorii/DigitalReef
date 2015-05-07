@@ -149,7 +149,7 @@ RMessage* Reef::subMessage(){
 	}
 }
 
-RMessage Reef::receiveMessage(){
+void Reef::receiveMessage(){
 	zmq::message_t request;
 	//  Wait for new request from client
 	rep.recv(&request);

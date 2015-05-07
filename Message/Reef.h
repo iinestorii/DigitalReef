@@ -25,7 +25,7 @@ public:
 	void removeTag(std::string);
 	void pubMessage(RMessage);
 	RMessage* subMessage();
-	RMessage receiveMessage();
+	void receiveMessage();
 
 private:
 	CJsonObject adr_list;
