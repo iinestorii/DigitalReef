@@ -2,6 +2,7 @@
 #include "RMessageArray.h"
 #include <iostream>
 #include <string>
+#include <Reef.h>
 
 int main(int argc, char *argv[]){
 	RMessage msg;
@@ -113,5 +114,16 @@ int main(int argc, char *argv[]){
 	std::cout << "False_Tags: " << msg2.containsAnyOf(string_vector_false) << std::endl;
 	std::cout << "True_Tags: " << msg2.containsAnyOf(string_vector_true) << std::endl;
 	
+	Reef testReef;
+	testReef.initiate("Start", "127.0.0.1", "5563", "5565");
+	std::cout << "Reef initiated" << std::endl;
+
+	RMessage reefPubTestMsg;
+	reefPubTestMsg.addSimplex("test_bool", true);
+	reefPubTestMsg.addTag("Test_Msg");
+
+
+	testReef.pubMessage(reefPubTestMsg);
+
 	return 0;
 }

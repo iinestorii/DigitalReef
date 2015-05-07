@@ -125,7 +125,7 @@ void Reef::removeTag(std::string tag){
 	tag_list.erase(std::remove(tag_list.begin(), tag_list.end(), tag), tag_list.end());
 }
 
-void Reef::pubMessage(RMessage msg){
+void Reef::pubMessage(RMessage& msg){
 	s_sendmore(publisher, "");
 	s_send(publisher, msg.getBody());
 }

@@ -23,7 +23,7 @@ public:
 	int initiate(std::string, std::string); //uses ports 5563 and 5565 as standards
 	void addTag(std::string);
 	void removeTag(std::string);
-	void pubMessage(RMessage);
+	void pubMessage(RMessage&);
 	RMessage* subMessage();
 	void receiveMessage();
 
