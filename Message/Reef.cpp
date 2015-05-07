@@ -27,7 +27,7 @@ int Reef::connect(std::string aka, std::string ownIp, std::string reefIp){
 }
 
 void Reef::connectRequest(std::string aka, std::string ownIp, std::string reefIp){
-	std::string str_constructor = "tcp://" + reefIp + ":5565";
+	std::string str_constructor = "tcp://" + reefIp;
 
 	const char* ip_char = str_constructor.c_str();
 
@@ -76,17 +76,28 @@ void Reef::connectSubscribe(){
 		{
 			cvn = adr_list[(*it)];			
 			address = cvn->ToString();
-			std::string str_constructor = address + ":5565";
-			subscriber.connect(str_constructor.c_str());
+			subscriber.connect(address.c_str());
 		}
 	
 }
 
 //returns 1 if everything worked as expected, other error codes will follow
+int Reef::initiate(std::string aka, std::string ip, std::string pubPort, std:: string repPort){
+	std::string pubStr = "tcp://*:"+ pubPort;
+	std::string repStr = "tcp://*:" + repPort;
+	std::string adressListStr = ip + ":" + pubPort;
+	publisher.bind(pubStr.c_str());
+	rep.bind(repStr.c_str());
+	adr_list.AddPare(aka, adressListStr);
+	return 1;
+}
+
+//returns 1 if everything worked as expected, other error codes will follow
 int Reef::initiate(std::string aka, std::string ip){
+	std::string adressListStr = ip + ":5563";
 	publisher.bind("tcp://*:5563");
 	rep.bind("tcp://*:5565");
-	adr_list.AddPare(aka, ip);
+	adr_list.AddPare(aka, adressListStr);
 	return 1;
 }
 

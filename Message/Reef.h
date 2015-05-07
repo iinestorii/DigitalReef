@@ -19,7 +19,8 @@ public:
 	Reef();
 	~Reef();
 	int connect(std::string, std::string, std::string); //returns 1 if everything worked as expected, other error codes will follow
-	int initiate(std::string, std::string); //returns 1 if everything worked as expected, other error codes will follow
+	int initiate(std::string, std::string, std::string, std::string); //returns 1 if everything worked as expected, other error codes will follow
+	int initiate(std::string, std::string); //uses ports 5563 and 5565 as standards
 	void addTag(std::string);
 	void removeTag(std::string);
 	void pubMessage(RMessage);
