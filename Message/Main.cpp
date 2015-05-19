@@ -122,8 +122,19 @@ int main(int argc, char *argv[]){
 	reefPubTestMsg.addSimplex("test_bool", true);
 	reefPubTestMsg.addTag("Test_Msg");
 
-
 	testReef.pubMessage(reefPubTestMsg);
+	std::cout << "Reef msg published" << std::endl;
 
+	testReef.addTag("interest1");
+	testReef.addTag("interest2");
+	testReef.removeTag("interest2");
+	testReef.removeTag("noInterest");
+	std::cout << "Reef interested Tags set" << std::endl;
+
+	testReef.receiveMessage();
+	std::cout << "ReceiveMessage used" << std::endl;
+
+	RMessage* subMessage=testReef.subMessage();
+	
 	return 0;
 }

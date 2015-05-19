@@ -8,8 +8,12 @@ Reef::Reef() :
 	publisher(context, ZMQ_PUB),
 	subscriber(context, ZMQ_SUB),
 	req(context, ZMQ_REQ),
-	rep(context, ZMQ_REP){
-}
+	rep(context, ZMQ_REP) 
+	/*items({{
+		{ req, 0, ZMQ_POLLIN, 0 },
+		{ subscriber, 0, ZMQ_POLLIN, 0 }
+	}})	*/	
+{}
 
 
 Reef::~Reef()
@@ -134,53 +138,93 @@ void Reef::pubMessage(RMessage& msg){
 //returns pointer to interesting message
 //returns null-pointer if no Message of interest was found
 RMessage* Reef::subMessage(){
-	//  Read envelope with address
-	std::string address = s_recv(subscriber);
-	//  Read message contents
-	std::string contents = s_recv(subscriber);
-	
-	RMessage msg;
-	msg.initiateWithJson(contents);
-	if (msg.containsAnyOf(tag_list)){
-		return &msg;
+	//initialize items[] if it isn't already
+	if (!itemsSet){
+		itemsInit();
 	}
-	else{
-		return nullptr;
+
+	//Message that will be received
+	zmq::message_t message;
+
+	//test if there are incoming messages on subscriber or req socket
+	zmq::poll(items, 2); 
+
+	//resolve message at request-socket
+	if (items[0].revents & ZMQ_POLLIN) 
+	{
+		/*TODO
+		1. Convert to RMessage
+		2. If Tag identifies as new Reefmember request, initiate admission
+		3. If Tag identifies as Pub-Request of Satellite-Coral, forward the Message, reply with stored incoming messages for Satellite Coral
+		4. If Tag identifies as personal request to be handelt in upper level logic, return message
+		*/			req.recv(&message);
+		std::cout << "Processing message from receiver" << std::endl;
+		items[0].revents = 0;
 	}
+	//resolve message at subscribe-socket
+	if (items[1].revents & ZMQ_POLLIN) 
+	{
+		/*TODO
+		1. Convert to RMessage
+		2. If Tag identifies as Message of interest for this Coral return it.
+		3. If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
+		4. else ignore 
+		*/
+		subscriber.recv(&message);
+		std::cout << "Processing message from subscriber" << std::endl;
+		items[1].revents = 0;
+	}
+	return 0;
+}
+
+/*
+*	C++, especially in vb13 has some Problems with initializing arrays in the constructor
+*	we don't want to initialize items[] everytime we poll, so the initialization got outsorced to 
+*	here and the bool itemsSet is used to check befor each Poll if items[] is initialized
+*/
+void Reef::itemsInit(){
+	items[0] = { req, 0, ZMQ_POLLIN, 0 };
+	items[1] = { subscriber, 0, ZMQ_POLLIN, 0 };
+	itemsSet = true;
 }
 
 void Reef::receiveMessage(){
-	zmq::message_t request;
-	//  Wait for new request from client
-	rep.recv(&request);
 
-	std::istringstream iss(static_cast<char*>(request.data()));
-	std::string aka;
-	std::string ip;
-
-	iss >> aka >> ip;
-	adr_list.AddPare(aka, ip);
 	
-	//build RMessage with aka and ip to inform Reef about the new Member
-	RMessage pubMember;
-	pubMember.addSimplex("aka",aka);
-	pubMember.addSimplex("ip", ip);
-	pubMember.addTag("SYS_newMember");
+	zmq::message_t request;
+	//  Get new request from client, don't block if no Message is in queue
+	rep.recv(&request, ZMQ_NOBLOCK);
 
-	//publish the pubMember Message in the Reef
-	pubMessage(pubMember);
+	// cheack if Message is received, if yes, proceed to add new Reef-Member
+	if (request.size() != 0){
+		std::istringstream iss(static_cast<char*>(request.data()));
+		std::string aka;
+		std::string ip;
 
-	//reply to new Coral with adr_list
-	std::string adr_list_str = adr_list.ToString();
+		iss >> aka >> ip;
+		adr_list.AddPare(aka, ip);
 
-	//determine length of message for the char buffer
-	int msg_length =adr_list_str.length()+2;
+		//build RMessage with aka and ip to inform Reef about the new Member
+		RMessage pubMember;
+		pubMember.addSimplex("aka", aka);
+		pubMember.addSimplex("ip", ip);
+		pubMember.addTag("SYS_newMember");
 
-	//initialize message with specific length
-	zmq::message_t reply(msg_length);
+		//publish the pubMember Message in the Reef
+		pubMessage(pubMember);
 
-	memcpy((void *)reply.data(), adr_list_str.c_str(), msg_length);
+		//reply to new Coral with adr_list
+		std::string adr_list_str = adr_list.ToString();
 
-	//sends Message to new Coral
-	req.send(reply);
+		//determine length of message for the char buffer
+		int msg_length = adr_list_str.length() + 2;
+
+		//initialize message with specific length
+		zmq::message_t reply(msg_length);
+
+		memcpy((void *)reply.data(), adr_list_str.c_str(), msg_length);
+
+		//sends Message to new Coral
+		req.send(reply);
+	}
 }

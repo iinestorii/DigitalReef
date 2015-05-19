@@ -10,6 +10,7 @@
 #include <cjson.h>
 #include <RMessage.h>
 #include <zhelpers.hpp>
+#include <array>
 //==================================================
 // class declaration
 //==================================================
@@ -35,6 +36,9 @@ private:
 	zmq::socket_t subscriber;
 	zmq::socket_t req;
 	zmq::socket_t rep;
+	bool itemsSet=false;
+	zmq::pollitem_t items[2];
+	void itemsInit();
 	bool findTag(std::string);
 	void connectRequest(std::string, std::string, std::string);
 	void connectSubscribe();
