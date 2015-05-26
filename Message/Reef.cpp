@@ -143,8 +143,6 @@ RMessage* Reef::subMessage(){
 		itemsInit();
 	}
 
-	//Message that will be received
-	zmq::message_t message;
 
 	//test if there are incoming messages on subscriber or req socket
 	zmq::poll(items, 2); 
@@ -153,32 +151,37 @@ RMessage* Reef::subMessage(){
 	if (items[0].revents & ZMQ_POLLIN) 
 	{
 		/*TODO
-		1. Convert to RMessage
 		2. If Tag identifies as new Reefmember request, initiate admission
 		3. If Tag identifies as Pub-Request of Satellite-Coral, forward the Message, reply with stored incoming messages for Satellite Coral
 		4. If Tag identifies as personal request to be handelt in upper level logic, return message
-		*/			req.recv(&message);
-		std::cout << "Processing message from receiver" << std::endl;
+		*/		
+
+		//for now only handle new Reefmember requests
+		receiveMessage();
+
 		items[0].revents = 0;
 	}
 	//resolve message at subscribe-socket
 	if (items[1].revents & ZMQ_POLLIN) 
 	{
-		/*TODO
-		1. Convert to RMessage
-		2. If Tag identifies as Message of interest for this Coral return it.
-		3. If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
-		4. else ignore 
-		*/
-		subscriber.recv(&message);
-		std::cout << "Processing message from subscriber" << std::endl;
+		// Convert to RMessage
+		RMessage retVal;
+		std::string builder = s_recv(subscriber);		
+		retVal.initiateWithJson(builder);
+
+		//If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
+
+		//If Tag identifies as Message of interest for this Coral return it
 		items[1].revents = 0;
+		if (retVal.containsAnyOf(tag_list)){
+			return &retVal;
+		}
 	}
 	return 0;
 }
 
 /*
-*	C++, especially in vb13 has some Problems with initializing arrays in the constructor
+*	C++, especially in vs13 has some Problems with initializing arrays in the constructor
 *	we don't want to initialize items[] everytime we poll, so the initialization got outsorced to 
 *	here and the bool itemsSet is used to check befor each Poll if items[] is initialized
 */
