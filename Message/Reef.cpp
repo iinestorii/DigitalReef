@@ -23,7 +23,7 @@ Reef::~Reef()
 int Reef::connect(std::string aka, std::string ownIp, std::string reefIp){
 	//make a Request to connect to the reef, saves Reef Addresslist in adr_list
 	connectRequest(aka, ownIp, reefIp);
-
+	std::cout << "nach connectRequest" << std::endl;
 	//use the adr_list to connect your sub to all pubs in the reef
 	connectSubscribe();
 
@@ -37,34 +37,31 @@ void Reef::connectRequest(std::string aka, std::string ownIp, std::string reefIp
 
 	req.connect(ip_char);
 
-	//determine length of message for the char buffer
-	int msg_length = aka.length() + ownIp.length() + 3;
-
-	//initialize message with specific length
-	zmq::message_t message(msg_length);
-
-	//saves the aka and ownIp in the data part of the message
-	_snprintf((char *)message.data(), msg_length,
-		"%s %s", aka, ownIp);
-
-	//sends Message to Reef
-	req.send(message);
-
+	
+	std::cout << "vor s_sendmore" << std::endl;
+	s_sendmore(req, aka.c_str());
+	std::cout << "vor s_send" << std::endl;
+	s_send(req, ownIp.c_str());
+	std::cout << "nach s_send" << std::endl;
+	
 	//receive the reply
 	zmq::message_t reply;
 	req.recv(&reply);
-
+	std::cout << "nach req.recv" << std::endl;
 	//get the json string from the reply
-	std::istringstream iss(static_cast<char*>(reply.data()));
-	std::string json;
-	iss >> json;
+	std::string json = std::string(static_cast<char*>(reply.data()), reply.size());
 
+	std::cout << "nach jason parsen vorbereitung" << std::endl;
+	std::cout << json << std::endl;
 	//parse the json to a JsonObject and save it as the new adr_list
 	adr_list = *CJsonParser::Execute((jstring)json);
+	std::cout << "nach jason parsen " << std::endl;
 }
 
 //subscribes to each member of the address list adr_list
 void Reef::connectSubscribe(){
+	std::cout << "in connectSubscribe" << std::endl;
+
 	//variables for the for-loop
 	const CJsonValue* cvn;
 	std::string address;
@@ -80,7 +77,7 @@ void Reef::connectSubscribe(){
 		{
 			cvn = adr_list[(*it)];			
 			address = cvn->ToString();
-			subscriber.connect(address.c_str());
+			subscriber.connect(address.c_str()); //HIER PROBLEM!!!!!!!!!!!!
 		}
 	
 }
@@ -143,17 +140,19 @@ RMessage* Reef::subMessage(){
 		itemsInit();
 	}
 
-
 	//test if there are incoming messages on subscriber or req socket
+	//for now it waits 1 second (1000ms) before running along
+	std::cout << "vor dem Block" << std::endl;
 	zmq::poll(items, 2); 
+	std::cout << "nach dem Block" << std::endl;
+	std::cout << items[0].revents << std::endl;
 
-	//resolve message at request-socket
+	//resolve message at reply-socket
 	if (items[0].revents & ZMQ_POLLIN) 
 	{
+		std::cout << "in Request part" << std::endl;
 		/*TODO
-		2. If Tag identifies as new Reefmember request, initiate admission
 		3. If Tag identifies as Pub-Request of Satellite-Coral, forward the Message, reply with stored incoming messages for Satellite Coral
-		4. If Tag identifies as personal request to be handelt in upper level logic, return message
 		*/		
 
 		//for now only handle new Reefmember requests
@@ -164,15 +163,28 @@ RMessage* Reef::subMessage(){
 	//resolve message at subscribe-socket
 	if (items[1].revents & ZMQ_POLLIN) 
 	{
+		std::cout << "in Subscribe part" << std::endl;
 		// Convert to RMessage
 		RMessage retVal;
 		std::string builder = s_recv(subscriber);		
 		retVal.initiateWithJson(builder);
 
-		//If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
+		//TODO If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
+
+		
+		items[1].revents = 0;
+
+		//If Tag identifies as broadcast with new Member-info
+		//add Info to adr_list
+		//sub to pub of new Member
+		if (retVal.containsAnyOf("SYS_newMember")){
+			std::string aka = retVal.getString("aka");
+			std::string adressListStr = retVal.getString("ip");
+			adr_list.AddPare(aka, adressListStr);
+			subscriber.connect(adressListStr.c_str());
+		}
 
 		//If Tag identifies as Message of interest for this Coral return it
-		items[1].revents = 0;
 		if (retVal.containsAnyOf(tag_list)){
 			return &retVal;
 		}
@@ -186,26 +198,40 @@ RMessage* Reef::subMessage(){
 *	here and the bool itemsSet is used to check befor each Poll if items[] is initialized
 */
 void Reef::itemsInit(){
-	items[0] = { req, 0, ZMQ_POLLIN, 0 };
+	items[0] = { rep, 0, ZMQ_POLLIN, 0 };
 	items[1] = { subscriber, 0, ZMQ_POLLIN, 0 };
 	itemsSet = true;
 }
 
 void Reef::receiveMessage(){
-
+	std::vector<std::string> frames;
 	
-	zmq::message_t request;
-	//  Get new request from client, don't block if no Message is in queue
-	rep.recv(&request, ZMQ_NOBLOCK);
+		zmq::message_t message;
+		int more;               //  Multipart detection
 
-	// cheack if Message is received, if yes, proceed to add new Reef-Member
-	if (request.size() != 0){
-		std::istringstream iss(static_cast<char*>(request.data()));
-		std::string aka;
-		std::string ip;
 
-		iss >> aka >> ip;
+		if (items[0].revents & ZMQ_POLLIN) {
+			while (1) {
+				//  Process all parts of the message
+				rep.recv(&message);
+				size_t more_size = sizeof(more);
+				rep.getsockopt(ZMQ_RCVMORE, &more, &more_size);
+				frames.push_back(std::string(static_cast<char*>(message.data()), message.size()));
+				if (!more)
+					break;      //  Last message part
+			}
+			for (unsigned n = 0; n<frames.size(); ++n) {
+				std::cout << frames.at(n) << std::endl;
+			}
+		}
+
+		//  Get new request from client, don't block if no Message is in queue
+
+		// cheack if Message is received, if yes, proceed to add new Reef-Member
+		std::string aka = frames.at(0);
+		std::string ip = frames.at(1);
 		adr_list.AddPare(aka, ip);
+		frames.clear();
 
 		//build RMessage with aka and ip to inform Reef about the new Member
 		RMessage pubMember;
@@ -213,21 +239,27 @@ void Reef::receiveMessage(){
 		pubMember.addSimplex("ip", ip);
 		pubMember.addTag("SYS_newMember");
 
+		std::cout << "vor pubMessage(pubMember);" << std::endl;
 		//publish the pubMember Message in the Reef
 		pubMessage(pubMember);
 
 		//reply to new Coral with adr_list
 		std::string adr_list_str = adr_list.ToString();
-
+		std::cout << adr_list_str << std::endl;
+		/*
 		//determine length of message for the char buffer
-		int msg_length = adr_list_str.length() + 2;
+		int msg_length = adr_list_str.length();
 
+		std::cout << "vor reply" << std::endl;
 		//initialize message with specific length
 		zmq::message_t reply(msg_length);
 
 		memcpy((void *)reply.data(), adr_list_str.c_str(), msg_length);
-
+		std::cout << "nach memcpy" << std::endl;
 		//sends Message to new Coral
-		req.send(reply);
-	}
+		rep.send(reply);
+
+		*/
+		s_send(rep, adr_list_str);
+	
 }

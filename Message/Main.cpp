@@ -5,6 +5,7 @@
 #include <Reef.h>
 
 int main(int argc, char *argv[]){
+	/*
 	RMessage msg;
 	msg.addSimplex("integer_1", 333);
 	msg.addSimplex("integer_2", 7);
@@ -114,27 +115,28 @@ int main(int argc, char *argv[]){
 	std::cout << "False_Tags: " << msg2.containsAnyOf(string_vector_false) << std::endl;
 	std::cout << "True_Tags: " << msg2.containsAnyOf(string_vector_true) << std::endl;
 	
+	*/
+
+/* Connect Version*/
+	Reef testReef;
+	testReef.initiate("Start", "127.0.0.1", "5567", "5569");
+	std::cout << "Reef initiated" << std::endl;
+	testReef.connect("Zweite", "127.0.0.1:5567", "127.0.0.1:5565");
+	std::cout << "Reef connected" << std::endl;
+	/*Connect Version*/
+
+	/* Initiate Version
 	Reef testReef;
 	testReef.initiate("Start", "127.0.0.1", "5563", "5565");
 	std::cout << "Reef initiated" << std::endl;
-
-	RMessage reefPubTestMsg;
-	reefPubTestMsg.addSimplex("test_bool", true);
-	reefPubTestMsg.addTag("Test_Msg");
-
-	testReef.pubMessage(reefPubTestMsg);
-	std::cout << "Reef msg published" << std::endl;
-
+	
 	testReef.addTag("interest1");
 	testReef.addTag("interest2");
-	testReef.removeTag("interest2");
-	testReef.removeTag("noInterest");
-	std::cout << "Reef interested Tags set" << std::endl;
 
-	testReef.receiveMessage();
-	std::cout << "ReceiveMessage used" << std::endl;
+	while (true){
+		RMessage* subMessage = testReef.subMessage();
+	}
 
-	RMessage* subMessage=testReef.subMessage();
-	
+	Initiate Version*/
 	return 0;
 }
