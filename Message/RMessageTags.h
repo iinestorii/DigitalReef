@@ -20,6 +20,9 @@ public:
 	bool containsAnyOf(char*);
 	bool containsAnyOf(std::string);
 	bool containsAnyOf(std::vector<std::string>);
+	void initiateTagsWithArray(CJsonArray&); //should be protected
+	void setArray(CJsonArray&);
+	std::string getTags();
 
 	RMessageTags();
 	~RMessageTags();

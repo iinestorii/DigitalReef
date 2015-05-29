@@ -24,10 +24,12 @@ public:
 
 	void addTag(char*);
 	void addTag(std::string);
+	void initiateTagsWithArray(CJsonArray*); //should be protected
 	bool containsAnyOf(char*);
 	bool containsAnyOf(std::string);
 	bool containsAnyOf(std::vector<std::string>);
 
+	void clear();
 	void initiateWithJson(std::string);
 
 	std::string getString(std::string);
@@ -40,6 +42,8 @@ public:
 	RMessageArray& getArray(char*);
 	RMessageBody& getInnerBody(std::string);
 	RMessageBody& getInnerBody(char*);
+
+	std::string getTags();
 
 	std::string getBody();
 	RMessage();

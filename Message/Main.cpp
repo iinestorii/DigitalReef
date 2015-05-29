@@ -121,8 +121,36 @@ int main(int argc, char *argv[]){
 	Reef testReef;
 	testReef.initiate("Start", "127.0.0.1", "5567", "5569");
 	std::cout << "Reef initiated" << std::endl;
+
 	testReef.connect("Zweite", "127.0.0.1:5567", "127.0.0.1:5565");
 	std::cout << "Reef connected" << std::endl;
+
+	testReef.addTag("Ping");
+	testReef.addTag("information");
+
+	RMessage pubMessage1;
+	pubMessage1.addTag("echo");
+	pubMessage1.addSimplex("echo", "Pong");
+
+	RMessage pubMessage2;
+	pubMessage2.addTag("information");
+	pubMessage2.addSimplex("info01", "data01");
+	RMessage subMessage1;
+	while (true){
+		testReef.pubMessage(pubMessage2);
+		testReef.subMessage(subMessage1);
+		if (subMessage1.containsAnyOf("Ping")){
+			std::cout << "Ping" << std::endl;
+			testReef.pubMessage(pubMessage1);
+		}
+		else if (subMessage1.containsAnyOf("information")){
+			std::cout << subMessage1.getString("info01") << std::endl;
+		}
+		Sleep(200);
+		
+
+	}
+
 	/*Connect Version*/
 
 	/* Initiate Version
@@ -130,11 +158,31 @@ int main(int argc, char *argv[]){
 	testReef.initiate("Start", "127.0.0.1", "5563", "5565");
 	std::cout << "Reef initiated" << std::endl;
 	
-	testReef.addTag("interest1");
-	testReef.addTag("interest2");
+	testReef.addTag("echo");
+	testReef.addTag("information");
+	RMessage subMessage;
+
+	RMessage pubMessage1;
+	pubMessage1.addTag("Ping");
+	pubMessage1.addSimplex("echo", "Pong");
+
+	RMessage pubMessage2;
+	pubMessage2.addTag("information");
+	pubMessage2.addSimplex("info01", "data01");
 
 	while (true){
-		RMessage* subMessage = testReef.subMessage();
+
+		testReef.pubMessage(pubMessage1);
+		Sleep(200);		
+		testReef.subMessage(subMessage);
+
+		if (subMessage.containsAnyOf("echo")){
+			std::cout << "Pong" << std::endl;
+			testReef.pubMessage(pubMessage1);
+		}
+		if (subMessage.containsAnyOf("information")){
+			std::cout << subMessage.getString("info01") << std::endl;
+		}
 	}
 
 	Initiate Version*/

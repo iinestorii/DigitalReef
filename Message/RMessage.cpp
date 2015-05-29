@@ -97,6 +97,10 @@ void RMessage::addTag(char* tag){
 	tags.addTag(tag);
 }
 
+void RMessage::initiateTagsWithArray(CJsonArray* jsonArray){
+	tags.setArray(*jsonArray);
+}
+
 bool RMessage::containsAnyOf(char* input_tag){
 	return tags.containsAnyOf(input_tag);
 }
@@ -107,4 +111,12 @@ bool RMessage::containsAnyOf(std::string input_tag){
 
 bool RMessage::containsAnyOf(std::vector<std::string> input_tags){
 	return tags.containsAnyOf(input_tags);
+}
+
+std::string RMessage::getTags(){
+	return tags.getTags();
+}
+
+void RMessage::clear(){
+
 }

@@ -19,9 +19,26 @@ void RMessageTags::addTag(char* tag){
 	json_array.AddMember(tag);
 }
 
+/*
+void RMessageTags::initiateTagsWithArray(CJsonArray& jsonArray){
+
+	for (unsigned i = 0; i < jsonArray.Size(); i++)
+	{
+		json_array.AddMember(jsonArray[i]);
+	}
+
+}
+*/
+
+void RMessageTags::setArray(CJsonArray& array){
+	json_array = array;
+}
+
 bool RMessageTags::containsAnyOf(char* input_tag){
+	
 	std::string temp1;	
 	std::string temp2 = "\"" + (std::string)input_tag + "\"";
+	
 	for (unsigned i = 0; i < json_array.Size(); i++)
 	{
 		temp1 = json_array[i]->ToString();
@@ -54,10 +71,14 @@ bool RMessageTags::containsAnyOf(std::vector<std::string> input_tags){
 		for (unsigned i = 0; i < json_array.Size(); i++)
 		{
 			temp1 = json_array[i]->ToString();
-			if (temp1 == temp2){
+			if (temp1 == temp2){				
 				return true;
 			}
 		}		
 	}
 	return false;
+}
+
+std::string RMessageTags::getTags(){
+	return json_array.ToString();
 }

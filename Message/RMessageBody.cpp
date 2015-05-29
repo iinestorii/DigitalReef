@@ -57,14 +57,11 @@ void RMessageBody::addArray(std::string key, RMessageArray& value){
 }
 void RMessageBody::setJsonObject(std::string json){
 	json_object = new CJsonObject(CJsonParser::Execute((jstring)json));
-	std::cout << "RMessageBody.setJsonObject() durchgefuehrt" << std::endl;
-	std::cout << json_object.ToString() << std::endl;
 }
 
 
 std::string RMessageBody::toString(){
-	std::string tmp = json_object.ToString();	
-	return tmp;
+		return json_object.ToString();
 }
 
 std::string RMessageBody::getString(std::string key){

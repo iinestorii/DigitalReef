@@ -4,6 +4,8 @@
 #ifndef __Reef_H_INCLUDED__
 #define __Reef_H_INCLUDED__
 
+
+
 //==================================================
 // include dependencies
 //==================================================
@@ -25,22 +27,33 @@ public:
 	void addTag(std::string);
 	void removeTag(std::string);
 	void pubMessage(RMessage&);
-	RMessage* subMessage();
+	void subMessage(RMessage&);
 	void receiveMessage();
 
 private:
+
+	//Adress-List and Tag-List to keep track of Reef Members and Interests
 	CJsonObject adr_list;
 	std::vector<std::string> tag_list;
+
+	//ZeroMQ context and sockets for the network
 	zmq::context_t context;
 	zmq::socket_t publisher;
 	zmq::socket_t subscriber;
 	zmq::socket_t req;
 	zmq::socket_t rep;
+
+	//ZeroMQ required attributes to check for new incoming Messages
 	bool itemsSet=false;
 	zmq::pollitem_t items[2];
+
+	//Methods for ZeroMQ connectivity, test of Messages
 	void itemsInit();
 	bool findTag(std::string);
 	void connectRequest(std::string, std::string, std::string);
 	void connectSubscribe();
+	const CJsonArray jsonToArray(std::string);
+	void tagsInitMessage(RMessage& msg, CJsonArray& array);
+	
 };
 #endif
