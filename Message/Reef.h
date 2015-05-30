@@ -27,13 +27,15 @@ public:
 	void addTag(std::string);
 	void removeTag(std::string);
 	void pubMessage(RMessage&);
-	void subMessage(RMessage&);
+	bool subMessage(RMessage&);
+	
 	void receiveMessage();
 
 private:
 
 	//Adress-List and Tag-List to keep track of Reef Members and Interests
 	CJsonObject adr_list;
+	std::string identity;
 	std::vector<std::string> tag_list;
 
 	//ZeroMQ context and sockets for the network

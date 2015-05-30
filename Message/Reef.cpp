@@ -21,47 +21,36 @@ Reef::~Reef()
 }
 //returns 1 if everything worked as expected, other error codes will follow
 int Reef::connect(std::string aka, std::string ownIp, std::string reefIp){
+	identity = aka;
 	//make a Request to connect to the reef, saves Reef Addresslist in adr_list
 	connectRequest(aka, ownIp, reefIp);
 
-	//use the adr_list to connect your sub to all pubs in the reef
+	//use the adr_list to connect your sub to all publisher in the reef
+	std::cout << "vor connectSubscribe" << std::endl;
 	connectSubscribe();
-
+	std::cout << "nach connectSubscribe" << std::endl;
 	return 1;
 }
 
 void Reef::connectRequest(std::string aka, std::string ownIp, std::string reefIp){
-	std::string str_constructor = "tcp://" + reefIp;
-
-	const char* ip_char = str_constructor.c_str();
-
-	req.connect(ip_char);
-
-	
-
-	s_sendmore(req, aka.c_str());
-
-	s_send(req, ownIp.c_str());
-
-	
+	std::string ip_str = "tcp://" + reefIp;
+	req.connect(ip_str.c_str());	//connect to 1 Server-Coral of Reef
+	s_sendmore(req, aka.c_str());	//send wished alias
+	s_send(req, ownIp.c_str());		//send adress of own publisher
+		
 	//receive the reply
 	zmq::message_t reply;
 	req.recv(&reply);
 
-	//get the json string from the reply
+	//get the json-string with adress-list of Reef-Corals from the reply
 	std::string json = std::string(static_cast<char*>(reply.data()), reply.size());
-
-
 
 	//parse the json to a JsonObject and save it as the new adr_list
 	adr_list = *CJsonParser::Execute((jstring)json);
-
 }
 
 //subscribes to each member of the address list adr_list
 void Reef::connectSubscribe(){
-
-
 	//variables for the for-loop
 	const CJsonValue* cvn;
 	std::string address;
@@ -70,24 +59,23 @@ void Reef::connectSubscribe(){
 	//iterator for the address-list
 	std::vector <jstring> keys;
 	adr_list.GetNames(keys);
+	keys.erase(std::remove(keys.begin(), keys.end(), identity),keys.end()); //erase own aka to avoid subscribing to own publisher
 	std::vector<jstring>::iterator it;
+	int connectError = 0;
 
 	//iterate over the address list and subscribe to each publisher
 	for (it = keys.begin(); it != keys.end(); it++)
 		{
 			cvn = adr_list[(*it)];			
 			address = cvn->ToString(); //HIER PROBLEM! address kommt mit Ausführungszeichen. Zunächst nur Workaround.
-			address = "tcp://"+address.substr(1, address.size() - 2);
-			
-
+			address = "tcp://"+address.substr(1, address.size() - 2);			
 			subscriber.connect(address.c_str()); 
-
-		}
-	
+		}	
 }
 
 //returns 1 if everything worked as expected, other error codes will follow
 int Reef::initiate(std::string aka, std::string ip, std::string pubPort, std:: string repPort){
+	identity = aka;
 	std::string pubStr = "tcp://*:"+ pubPort;
 	std::string repStr = "tcp://*:" + repPort;
 	std::string adressListStr = ip + ":" + pubPort;
@@ -100,6 +88,7 @@ int Reef::initiate(std::string aka, std::string ip, std::string pubPort, std:: s
 
 //returns 1 if everything worked as expected, other error codes will follow
 int Reef::initiate(std::string aka, std::string ip){
+	identity = aka;
 	std::string adressListStr = ip + ":5563";
 	publisher.bind("tcp://*:5563");
 	rep.bind("tcp://*:5565");
@@ -138,66 +127,88 @@ void Reef::pubMessage(RMessage& msg){
 	s_send(publisher, msg.getBody());
 }
 
-//checks via tag_list if Message of interest has arrived
-//returns pointer to interesting message
-//returns null-pointer if no Message of interest was found
-void Reef::subMessage(RMessage& retVal){
-	//initialize items[] if it isn't already
+//checks	via tag_list if Message of interest has arrived and saves it
+//			for System Messages that need to be taken care of
+//param		RMessage&	in which Message of interest will be safed if found
+//returns	false		if no Message of interest was found
+//			true		if Message of interest was found
+bool Reef::subMessage(RMessage& retVal){
 	
+	//initialize items[] if it isn't already	
 	if (!itemsSet){
 		itemsInit();
 	}
+	
+	bool retBool = false;
+	bool queue_Not_Empty = true;
 
-	while (true){
+	//loops until all queued Messages are worked off or a Message of interest gets returned (return true;)
+	while (queue_Not_Empty){
+
+		queue_Not_Empty = false;
 		retVal = RMessage();
+
 		//test if there are incoming messages on subscriber or req socket
-		//for now it waits 1 second (1000ms) before running along	
-		zmq::poll(items, 2, -1);
+		//for now it does not block if there is no Message	
+		zmq::poll(items, 2, 0);
 
 
 		//resolve message at reply-socket
 		if (items[0].revents & ZMQ_POLLIN)
 		{
 
+			queue_Not_Empty = true;
 			/*TODO
 			3. If Tag identifies as Pub-Request of Satellite-Coral, forward the Message, reply with stored incoming messages for Satellite Coral
 			*/
-
 			//for now only handle new Reefmember requests
 			receiveMessage();
 
 			items[0].revents = 0;
 		}
+
 		//resolve message at subscribe-socket
 		if (items[1].revents & ZMQ_POLLIN)
 		{
-			s_recv(subscriber); //empty envelop
-			CJsonArray tags = jsonToArray(s_recv(subscriber)); //parse the json-String to CJsonArray
-			std::string body = s_recv(subscriber);	//real content of message	
+	
+			queue_Not_Empty = true;
 
-			retVal.initiateWithJson(body);
+			s_recv(subscriber);									//empty envelop
+			CJsonArray tags = jsonToArray(s_recv(subscriber));	//parse the json-String to CJsonArray
+			std::string body = s_recv(subscriber);				//real content of message	
 			
 			tagsInitMessage(retVal, tags);
 		
 			//TODO If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
 			items[1].revents = 0;
 
-
 			//If Tag identifies as broadcast with new Member-info
 			//add Info to adr_list
 			//sub to pub of new Member
 			if (retVal.containsAnyOf("SYS_newMember")){
-				std::string aka = retVal.getString("aka");
-				std::string adressListStr = retVal.getString("ip");
+				retVal.initiateWithJson(body);
+				std::string aka = retVal.getString("aka").substr(1, retVal.getString("aka").size() - 2);
+				std::string adressListStr = retVal.getString("ip").substr(1, retVal.getString("ip").size() - 2);
 				adr_list.AddPare(aka, adressListStr);
-				subscriber.connect(adressListStr.c_str());
+				std::string adressConnectStr = "tcp://" + adressListStr;
+				std::cout << adressConnectStr << std::endl;
+				subscriber.connect(adressConnectStr.c_str());
+				
 			} else if (retVal.containsAnyOf(tag_list)){ //If Tag identifies as Message of interest for this Coral return it
-				break;
+				retVal.initiateWithJson(body);
+				queue_Not_Empty = false;
+				retBool = true;
 			}
 		}
 	}
 	
+
+
+	if (!retBool)retVal = RMessage(); //clear Message
+	return retBool; //no message of interest found
 }
+
+
 
 void Reef::tagsInitMessage(RMessage& msg, CJsonArray& array){
 	for (unsigned i = 0; i < array.Size(); i++)
@@ -231,51 +242,39 @@ void Reef::itemsInit(){
 }
 
 void Reef::receiveMessage(){
-	std::vector<std::string> frames;
+	std::vector<std::string> frames;	
+	zmq::message_t message;
+	int more;               //  Multipart detection
 	
-		zmq::message_t message;
-		int more;               //  Multipart detection
+	while (true) {
+		//  Process all parts of the message
+		rep.recv(&message);
+		size_t more_size = sizeof(more);
+		rep.getsockopt(ZMQ_RCVMORE, &more, &more_size);
+		frames.push_back(std::string(static_cast<char*>(message.data()), message.size()));
+		if (!more)
+			break;      //  Last message part
+	}
 
+	std::string aka = frames.at(0);
+	std::string ip = frames.at(1);
+	adr_list.AddPare(aka, ip);
+	frames.clear();
 
-		if (items[0].revents & ZMQ_POLLIN) { //!!!!!!!!!!!!!IS THIS REALLY NEEDED?????????????????
-			while (1) {
-				//  Process all parts of the message
-				rep.recv(&message);
-				size_t more_size = sizeof(more);
-				rep.getsockopt(ZMQ_RCVMORE, &more, &more_size);
-				frames.push_back(std::string(static_cast<char*>(message.data()), message.size()));
-				if (!more)
-					break;      //  Last message part
-			}
+	//build RMessage with aka and ip to inform Reef about the new Member
+	RMessage pubMember;
+	pubMember.addSimplex("aka", aka);
+	pubMember.addSimplex("ip", ip);
+	pubMember.addTag("SYS_newMember");
 
-		}
+	//publish the pubMember Message in the Reef
+	pubMessage(pubMember);
 
-		//  Get new request from client, don't block if no Message is in queue
-
-		// cheack if Message is received, if yes, proceed to add new Reef-Member
-		std::string aka = frames.at(0);
-		std::string ip = frames.at(1);
-		adr_list.AddPare(aka, ip);
-		frames.clear();
-
-		//build RMessage with aka and ip to inform Reef about the new Member
-		RMessage pubMember;
-		pubMember.addSimplex("aka", aka);
-		pubMember.addSimplex("ip", ip);
-		pubMember.addTag("SYS_newMember");
-
-		//publish the pubMember Message in the Reef
-		pubMessage(pubMember);
-
-		//reply to new Coral with adr_list
-		std::string adr_list_str = adr_list.ToString();
-		
-		//sub to pub of new Coral
-		ip =  "tcp://" + ip;
-		std::cout << "IP Subscriber connects to:" << std::endl;
-		std::cout << ip << std::endl;
-		subscriber.connect(ip.c_str());
-		std::cout << "subscribed!" << std::endl;
-		s_send(rep, adr_list_str);
+	//reply to new Coral with adr_list
+	std::string adr_list_str = adr_list.ToString();
 	
+	//sub to pub of new Coral
+	ip =  "tcp://" + ip;
+	subscriber.connect(ip.c_str());
+	s_send(rep, adr_list_str);	
 }

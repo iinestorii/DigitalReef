@@ -116,75 +116,145 @@ int main(int argc, char *argv[]){
 	std::cout << "True_Tags: " << msg2.containsAnyOf(string_vector_true) << std::endl;
 	
 	*/
+	int version =0;
 
-/* Connect Version*/
-	Reef testReef;
-	testReef.initiate("Start", "127.0.0.1", "5567", "5569");
-	std::cout << "Reef initiated" << std::endl;
+	if (version == 2){
+		/* Connect Version 2*/
+		Reef testReef;
+		RMessage subMessage1;
+		RMessage pubMessage1;
 
-	testReef.connect("Zweite", "127.0.0.1:5567", "127.0.0.1:5565");
-	std::cout << "Reef connected" << std::endl;
 
-	testReef.addTag("Ping");
-	testReef.addTag("information");
+		testReef.initiate("Start", "127.0.0.1", "5571", "5573");
+		std::cout << "Reef initiated" << std::endl;
 
-	RMessage pubMessage1;
-	pubMessage1.addTag("echo");
-	pubMessage1.addSimplex("echo", "Pong");
+		testReef.connect("Dritte", "127.0.0.1:5571", "127.0.0.1:5569");
+		std::cout << "Reef connected" << std::endl;
 
-	RMessage pubMessage2;
-	pubMessage2.addTag("information");
-	pubMessage2.addSimplex("info01", "data01");
-	RMessage subMessage1;
-	while (true){
+		testReef.addTag("Ping");
+		testReef.addTag("echo");
+
+
+
+		pubMessage1.addTag("coral2");
+		pubMessage1.addSimplex("coral2key", "coral2data");
+
+
+
+		while (true){
+			while (testReef.subMessage(subMessage1)){
+
+				if (subMessage1.containsAnyOf("Ping")){
+				std::cout << "Ping" << std::endl;
+				}	else if (subMessage1.containsAnyOf("echo")){
+				std::cout << "Pong" << std::endl;
+				}
+			}
+			testReef.pubMessage(pubMessage1);
+			Sleep(700);
+		}
+
+		/*Connect Version 2*/
+	}
+	else if (version == 1){
+		/* Connect Version 1*/
+		Reef testReef;
+		RMessage subMessage1;
+		RMessage pubMessage1;
+		RMessage pubMessage2;
+
+		testReef.initiate("Start", "127.0.0.1", "5567", "5569");
+		std::cout << "Reef initiated" << std::endl;
+
+		testReef.connect("Zweite", "127.0.0.1:5567", "127.0.0.1:5565");
+		std::cout << "Reef connected" << std::endl;
+
+		testReef.addTag("Ping");
+		testReef.addTag("coral0");
+		testReef.addTag("coral2");
+
+		pubMessage1.addTag("echo");
+		pubMessage1.addSimplex("echo", "Pong");
+
+
+		pubMessage2.addTag("coral1");
+		pubMessage2.addSimplex("coral1key", "coral1data");
+
+		bool ping=false;
+
+		while (true){
 		testReef.pubMessage(pubMessage2);
-		testReef.subMessage(subMessage1);
-		if (subMessage1.containsAnyOf("Ping")){
-			std::cout << "Ping" << std::endl;
-			testReef.pubMessage(pubMessage1);
+			while(testReef.subMessage(subMessage1)){
+				if (subMessage1.containsAnyOf("Ping")){
+					std::cout << "Ping" << std::endl;
+					ping = true;					
+				}
+				else if (subMessage1.containsAnyOf("coral0")){
+					std::cout << subMessage1.getString("coral0key") << std::endl;
+				}
+				else if (subMessage1.containsAnyOf("coral2")){
+					std::cout << subMessage1.getString("coral2key") << std::endl;
+				}
+			}
+			if (ping){
+				testReef.pubMessage(pubMessage1);
+				ping = false;
+			}
+			Sleep(700);
 		}
-		else if (subMessage1.containsAnyOf("information")){
-			std::cout << subMessage1.getString("info01") << std::endl;
-		}
-		Sleep(200);
-		
 
+		/*Connect Version 1*/
 	}
+	else if (version == 0){
+		/* Initiate Version*/
+		Reef testReef;
+		RMessage subMessage;
+		RMessage pubMessage1;
+		RMessage pubMessage2;
 
-	/*Connect Version*/
+		testReef.initiate("Start", "127.0.0.1", "5563", "5565");
+		std::cout << "Reef initiated" << std::endl;
 
-	/* Initiate Version
-	Reef testReef;
-	testReef.initiate("Start", "127.0.0.1", "5563", "5565");
-	std::cout << "Reef initiated" << std::endl;
-	
-	testReef.addTag("echo");
-	testReef.addTag("information");
-	RMessage subMessage;
+		testReef.addTag("echo");
+		testReef.addTag("coral1");
+		testReef.addTag("coral2");
 
-	RMessage pubMessage1;
-	pubMessage1.addTag("Ping");
-	pubMessage1.addSimplex("echo", "Pong");
+		pubMessage1.addTag("Ping");
+		pubMessage1.addSimplex("echo", "Pong");
 
-	RMessage pubMessage2;
-	pubMessage2.addTag("information");
-	pubMessage2.addSimplex("info01", "data01");
 
-	while (true){
+		pubMessage2.addTag("coral0");
+		pubMessage2.addSimplex("coral0key", "coral0data");
+		bool pong_received = false;
+		bool pong = false;
 
-		testReef.pubMessage(pubMessage1);
-		Sleep(200);		
-		testReef.subMessage(subMessage);
-
-		if (subMessage.containsAnyOf("echo")){
-			std::cout << "Pong" << std::endl;
-			testReef.pubMessage(pubMessage1);
+		while (true){
+			if (!pong_received){
+				testReef.pubMessage(pubMessage1);
+			}
+			Sleep(700);
+			while (testReef.subMessage(subMessage)){
+				if (subMessage.containsAnyOf("echo")){
+					pong_received = true;
+					pong = true;					
+					std::cout << "Pong" << std::endl;
+					
+				}
+				else if (subMessage.containsAnyOf("coral1")){
+					std::cout << subMessage.getString("coral1key") << std::endl;
+				}
+				else if (subMessage.containsAnyOf("coral2")){
+					std::cout << subMessage.getString("coral2key") << std::endl;
+				}
+			}
+			if (pong){
+				testReef.pubMessage(pubMessage1);
+				pong = false;
+			}
+			testReef.pubMessage(pubMessage2);
 		}
-		if (subMessage.containsAnyOf("information")){
-			std::cout << subMessage.getString("info01") << std::endl;
-		}
+
+		/*Initiate Version*/
 	}
-
-	Initiate Version*/
 	return 0;
 }
