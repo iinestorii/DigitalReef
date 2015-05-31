@@ -85,6 +85,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Reef.h" />
+    <ClInclude Include="ReefSatellite.h" />
     <ClInclude Include="RMessage.h" />
     <ClInclude Include="RMessageArray.h" />
     <ClInclude Include="RMessageBody.h" />
@@ -93,6 +94,7 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Reef.cpp" />
+    <ClCompile Include="ReefSatellite.cpp" />
     <ClCompile Include="RMessage.cpp" />
     <ClCompile Include="RMessageArray.cpp" />
     <ClCompile Include="RMessageBody.cpp" />
