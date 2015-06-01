@@ -29,14 +29,22 @@ public:
 	void pubMessage(RMessage&);
 	bool subMessage(RMessage&);
 	
-	void receiveMessage();
+	
 
 private:
+	//struct needed to add Array to Map, as array has no copy-constructor
+	struct satelliteMsgControl
+	{
+		int control[2]; //{position in satelliteMsgs, number of Msgs in the Queue}
+	};
 
 	//Adress-List and Tag-List to keep track of Reef Members and Interests
-	CJsonObject adr_list;
-	std::string identity;
-	std::vector<std::string> tag_list;
+	CJsonObject adr_list; //adress-list of Reef-Servers
+	std::string identity; //own alias in the Reef
+	std::vector<std::string> tag_list; //own interests
+	std::vector<std::string> satelliteAliases; //Aliases of dependend Satellites
+	std::vector< std::vector<RMessage> > satelliteMsgs; //Vector of Vector of Messages for each dependend Satellite
+	std::map<std::string, satelliteMsgControl> satMsgControlMap; //Control Numbers concerning the work on the satelliteMsgs
 
 	//ZeroMQ context and sockets for the network
 	zmq::context_t context;
@@ -55,7 +63,16 @@ private:
 	void connectRequest(std::string, std::string, std::string);
 	void connectSubscribe();
 	const CJsonArray jsonToArray(std::string);
-	void tagsInitMessage(RMessage& msg, CJsonArray& array);
+	void tagsInitMessage(RMessage&, CJsonArray&);
 	
+	void receiveMsg();
+	int Reef::getReceiveMsgMode();
+	void newServer();
+	void newSatellite();
+	void pubRequest();
+	void recRequest(std::string);
+	void saveMessage(std::string, RMessage&);
+
+
 };
 #endif

@@ -22,7 +22,9 @@ int ReefSatellite::connect(std::string aka, std::string reefIp){
 
 void ReefSatellite::connectRequest(std::string aka, std::string reefIp){
 	std::string ip_str = "tcp://" + reefIp;
+	std::string mode = "1";
 	req.connect(ip_str.c_str());	//connect to 1 Server-Coral of Reef
+	s_sendmore(req,mode.c_str());
 	s_send(req, aka.c_str());	//send wished alias
 	
 	//receive the reply
@@ -36,31 +38,52 @@ void ReefSatellite::connectRequest(std::string aka, std::string reefIp){
 
 
 bool ReefSatellite::pubAndReceive(RMessage& pub, RMessage& rec){
-	s_sendmore(req, "Sys_PubAndReceive");
+	s_sendmore(req, "3");
 	s_sendmore(req, pub.getTags());
 	s_send(req, pub.getBody());
 
-	//TODO!!!!!!!!!!!!!!!!!!!!!
-	//receive reply, check for RMessage, save in rec 
-	//return true if received, false otherwise
-	//!!!!!!!!!!!!!!!!!!!!!!!!!
-	return true;
+	return receiveMessage(rec);
 }
 
 void ReefSatellite::pub(RMessage& pub){
-	s_sendmore(req, "Sys_Pub");
+	s_sendmore(req, "2");
 	s_sendmore(req, pub.getTags());
 	s_send(req, pub.getBody());
 }
 
 bool ReefSatellite::receive(RMessage& rec){
-	s_send(req, "Sys_Rec");
+	s_send(req, "4");
+	return receiveMessage(rec);
+}
 
-	//TODO!!!!!!!!!!!!!!!!!!!!!
-	//receive reply, check for RMessage, save in rec 
-	//return true if received, false otherwise
-	//!!!!!!!!!!!!!!!!!!!!!!!!!
-	return true;
+bool ReefSatellite::receiveMessage(RMessage& repMsg){
+	repMsg = RMessage();
+	zmq::message_t reply;
+
+	//receive Number of waiting Messages
+	req.recv(&reply);
+	std::string numberMsgs = std::string(static_cast<char*>(reply.data()), reply.size());
+	waitingMsgs = std::stoi(numberMsgs);
+
+	//if 0 Messages are waiting, non have been sent, return false
+	if (!waitingMsgs){
+		return false;
+	}
+
+	//  Process all parts of the message
+	req.recv(&reply);	 //receive Tags
+	CJsonArray tags = jsonToArray(std::string(static_cast<char*>(reply.data()), reply.size()));
+
+	req.recv(&reply);	//receive Body
+	std::string body = std::string(static_cast<char*>(reply.data()), reply.size());
+
+	//initiate the repMsg
+	tagsInitMessage(repMsg, tags);
+	repMsg.initiateWithJson(body);
+
+	//lower Number of Waiting Messages as 1 was just received
+	waitingMsgs--;
+	return true;	
 }
 
 void ReefSatellite::tagsInitMessage(RMessage& msg, CJsonArray& array){
@@ -83,3 +106,10 @@ const CJsonArray ReefSatellite::jsonToArray(std::string arrayString){
 	return jsonArray;
 }
 
+int ReefSatellite::getWaitingMsgs(){
+	return waitingMsgs;
+}
+
+bool to_bool(std::string const& s) {
+	return s != "0";
+}

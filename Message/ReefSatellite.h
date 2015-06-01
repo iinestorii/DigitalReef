@@ -26,15 +26,18 @@ public:
 	void pub(RMessage&);
 	bool receive(RMessage&);
 	void requestMessage();
+	int getWaitingMsgs();
 
 private:
 
 	std::string identity;
-
+	unsigned int waitingMsgs=0; //Number of Messages in stack at Server waiting to be reveived by this Satellite
 	//ZeroMQ context and sockets for the network
 	zmq::context_t context;
 	zmq::socket_t req;
 
+	bool to_bool(std::string const&);
+	bool receiveMessage(RMessage&);
 	bool findTag(std::string);
 	void connectRequest(std::string, std::string);
 	const CJsonArray jsonToArray(std::string);
