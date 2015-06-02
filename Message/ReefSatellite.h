@@ -25,7 +25,6 @@ public:
 	bool pubAndReceive(RMessage&, RMessage&);
 	void pub(RMessage&);
 	bool receive(RMessage&);
-	void requestMessage();
 	int getWaitingMsgs();
 
 private:

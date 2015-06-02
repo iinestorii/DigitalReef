@@ -9,10 +9,6 @@ Reef::Reef() :
 	subscriber(context, ZMQ_SUB),
 	req(context, ZMQ_REQ),
 	rep(context, ZMQ_REP) 
-	/*items({{
-		{ req, 0, ZMQ_POLLIN, 0 },
-		{ subscriber, 0, ZMQ_POLLIN, 0 }
-	}})	*/	
 {}
 
 
@@ -26,15 +22,14 @@ int Reef::connect(std::string aka, std::string ownIp, std::string reefIp){
 	connectRequest(aka, ownIp, reefIp);
 
 	//use the adr_list to connect your sub to all publisher in the reef
-	std::cout << "vor connectSubscribe" << std::endl;
 	connectSubscribe();
-	std::cout << "nach connectSubscribe" << std::endl;
 	return 1;
 }
 
 void Reef::connectRequest(std::string aka, std::string ownIp, std::string reefIp){
 	std::string ip_str = "tcp://" + reefIp;
 	req.connect(ip_str.c_str());	//connect to 1 Server-Coral of Reef
+	s_sendmore(req, "0");
 	s_sendmore(req, aka.c_str());	//send wished alias
 	s_send(req, ownIp.c_str());		//send adress of own publisher
 		
@@ -174,7 +169,7 @@ bool Reef::subMessage(RMessage& retVal){
 			
 			tagsInitMessage(retVal, tags);
 		
-			//TODO If Tag identifies as Message of interest for Satelite Coral store it and reply it with next request of Satellite
+	
 			items[1].revents = 0;
 
 			//If Tag identifies as broadcast with new Member-info
@@ -186,7 +181,6 @@ bool Reef::subMessage(RMessage& retVal){
 				std::string adressListStr = retVal.getString("ip").substr(1, retVal.getString("ip").size() - 2);
 				adr_list.AddPare(aka, adressListStr);
 				std::string adressConnectStr = "tcp://" + adressListStr;
-				std::cout << adressConnectStr << std::endl;
 				subscriber.connect(adressConnectStr.c_str());
 				
 			} else {
@@ -196,6 +190,7 @@ bool Reef::subMessage(RMessage& retVal){
 					retBool = true;
 				}
 				if (retVal.containsAnyOf(satelliteAliases)){ //If Tag identifies as Message of interest for at least one dependent Satellite
+					std::cout << "inside if (retVal.containsAnyOf(satelliteAliases)){" << std::endl;
 					retVal.initiateWithJson(body);
 
 					for (std::vector<std::string>::iterator it = satelliteAliases.begin(); it != satelliteAliases.end(); ++it) {
@@ -275,9 +270,10 @@ void Reef::receiveMsg(){
 		break;
 	case 2: //publish Messages for a dependent Satellite
 		pubRequest();
+		s_send(rep, ""); //request socket of satellite needs a reply to unblock
 		break;
 	case 3: //publish Messages for a dependent Satellite, reply with stored Messages for Satellite
-		 aka = s_recv(rep);		
+		 aka = s_recv(rep);	
 		pubRequest();
 		recRequest(aka);
 		break;
@@ -362,44 +358,46 @@ void Reef::newSatellite(){
 
 // pubRequest by one of the Satellites, this Server just forwards it by publishing it
 void Reef::pubRequest(){
-
 	//TODO!!!!!!!!!!!!!!!!!!
 	// Check if msg is of interest for this server or other dependent satellites
 	//!!!!!!!!!!!!!!!!!!!!!!
 	zmq::message_t message;
-	
-	//send empty envelope
-	s_sendmore(publisher, "");
 
-	//receive tag-part of message and publish it
-	rep.recv(&message);
-	zmq_send(publisher, &message, message.size(), ZMQ_SNDMORE);
-	//receive body-part of message and publish it
-	rep.recv(&message);
-	zmq_send(publisher, &message, message.size(), 0);
+	s_sendmore(publisher, ""); //send empty envelope
+	s_sendmore(publisher, s_recv(rep));	//receive tag-part of message and publish it
+	s_send(publisher, s_recv(rep)); //receive body-part of message and publish itcout
 }
 
 //recRequest by one of the Satellites, reply with number of stored msgs and the oldest stored msg
 void Reef::recRequest(std::string aka){	
-	
+	std::cout << "Anfang recRequest(...)" << std::endl;
 	//find satellite by alias in the map
 	auto search = satMsgControlMap.find(aka);
 
 	if (search != satMsgControlMap.end()) { //if sat has been found
-
+		std::cout << "in if (search != satMsgControlMap.end())" << std::endl;
 		//get the Controlnumbers for this satellite
 		satelliteMsgControl msgControl = search->second;
 		int msgCount = msgControl.control[1]; //number of stored Messages for this Satellite
-		s_sendmore(rep, std::to_string(msgCount)); //send this number to the satellite
-		if (!msgCount){ 
+		std::cout << "Message count =" << msgCount << std::endl;
+		if (!msgCount){
+			std::cout << "in if (!msgCount){" << std::endl;
+			s_send(rep, std::to_string(msgCount)); //send the number of messages to the satellite
+		}
+		else{
+			std::cout << "in else{" << std::endl;
+			s_sendmore(rep, std::to_string(msgCount)); //send the number of messages to the satellite			
 			int msgPosition = msgControl.control[0]; //find position of Message Queue in the vector of all Queues
+			std::cout << "Message Position =" << msgPosition << std::endl;
 			RMessage msg = satelliteMsgs[msgPosition][0]; //get the oldest Message
 			s_sendmore(rep, msg.getTags()); //send the Message to the satellite
 			s_send(rep, msg.getBody());
+			std::cout << "vor erase"<< std::endl;
 			satelliteMsgs[msgPosition].erase(satelliteMsgs[msgPosition].begin()); //erase the Message from the Queue
+			std::cout << "nach erase" << std::endl;
 			msgControl.control[1]--; //lower the count of stored Messages by 1
+			
 		}
-
 	}else{
 		//TODO!!!!!!!!!!!!!!!!!!!!
 		//What happens if there is no entry for the Satellite in the map?

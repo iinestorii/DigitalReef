@@ -39,9 +39,10 @@ void ReefSatellite::connectRequest(std::string aka, std::string reefIp){
 
 bool ReefSatellite::pubAndReceive(RMessage& pub, RMessage& rec){
 	s_sendmore(req, "3");
+	s_sendmore(req, identity.c_str());
 	s_sendmore(req, pub.getTags());
 	s_send(req, pub.getBody());
-
+	
 	return receiveMessage(rec);
 }
 
@@ -49,20 +50,22 @@ void ReefSatellite::pub(RMessage& pub){
 	s_sendmore(req, "2");
 	s_sendmore(req, pub.getTags());
 	s_send(req, pub.getBody());
+	
+	s_recv(req);//req has to receive rep to unblock, here empty	
 }
 
 bool ReefSatellite::receive(RMessage& rec){
 	s_send(req, "4");
+	s_sendmore(req, identity);
 	return receiveMessage(rec);
 }
 
 bool ReefSatellite::receiveMessage(RMessage& repMsg){
 	repMsg = RMessage();
-	zmq::message_t reply;
+	std::string numberMsgs;
 
 	//receive Number of waiting Messages
-	req.recv(&reply);
-	std::string numberMsgs = std::string(static_cast<char*>(reply.data()), reply.size());
+	numberMsgs = s_recv(req);
 	waitingMsgs = std::stoi(numberMsgs);
 
 	//if 0 Messages are waiting, non have been sent, return false
@@ -71,11 +74,8 @@ bool ReefSatellite::receiveMessage(RMessage& repMsg){
 	}
 
 	//  Process all parts of the message
-	req.recv(&reply);	 //receive Tags
-	CJsonArray tags = jsonToArray(std::string(static_cast<char*>(reply.data()), reply.size()));
-
-	req.recv(&reply);	//receive Body
-	std::string body = std::string(static_cast<char*>(reply.data()), reply.size());
+	CJsonArray tags = jsonToArray(s_recv(req));
+	std::string body = s_recv(req);
 
 	//initiate the repMsg
 	tagsInitMessage(repMsg, tags);
