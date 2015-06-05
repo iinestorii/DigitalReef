@@ -163,11 +163,12 @@ bool Reef::subMessage(RMessage& retVal){
 	
 			queue_Not_Empty = true;
 
-			s_recv(subscriber);									//empty envelop
-			CJsonArray tags = jsonToArray(s_recv(subscriber));	//parse the json-String to CJsonArray
-			std::string body = s_recv(subscriber);				//real content of message	
+			s_recv(subscriber);	//empty envelop	
+			std::string tagsStr = s_recv(subscriber); //tags of message
+			CJsonArray tagsArray = jsonToArray(tagsStr);	//parse the json-String to CJsonArray
+			std::string bodyStr = s_recv(subscriber);				//real content of message	
 			
-			tagsInitMessage(retVal, tags);
+			tagsInitMessage(retVal, tagsArray);
 		
 	
 			items[1].revents = 0;
@@ -176,7 +177,7 @@ bool Reef::subMessage(RMessage& retVal){
 			//add Info to adr_list
 			//sub to pub of new Member
 			if (retVal.containsAnyOf("SYS_newMember")){
-				retVal.initiateWithJson(body);
+				retVal.initiateWithJson(bodyStr);
 				std::string aka = retVal.getString("aka").substr(1, retVal.getString("aka").size() - 2);
 				std::string adressListStr = retVal.getString("ip").substr(1, retVal.getString("ip").size() - 2);
 				adr_list.AddPare(aka, adressListStr);
@@ -185,17 +186,16 @@ bool Reef::subMessage(RMessage& retVal){
 				
 			} else {
 				if (retVal.containsAnyOf(tag_list)){ //If Tag identifies as Message of interest for this Coral return it
-					retVal.initiateWithJson(body);
+					retVal.initiateWithJson(bodyStr);
 					queue_Not_Empty = false;
 					retBool = true;
 				}
 				if (retVal.containsAnyOf(satelliteAliases)){ //If Tag identifies as Message of interest for at least one dependent Satellite
-					retVal.initiateWithJson(body);
-
+					std::pair<std::string, std::string> msgPair = std::make_pair(tagsStr, bodyStr);
 					for (std::vector<std::string>::iterator it = satelliteAliases.begin(); it != satelliteAliases.end(); ++it) {
 						if (retVal.containsAnyOf(*it)){
 							std::cout << "vor saveMessage" << std::endl;
-							saveMessage(*it, retVal);
+							saveMessage(*it, msgPair);
 							std::cout << "nach saveMessage" << std::endl;
 						}
 					}
@@ -208,7 +208,7 @@ bool Reef::subMessage(RMessage& retVal){
 	return retBool; //no message of interest found
 }
 
-void Reef::saveMessage(std::string aka, RMessage& msg){
+void Reef::saveMessage(std::string aka, std::pair<std::string, std::string> msg){
 	//find satellite by alias in the map
 	/*std::cout << "0"<< std::endl;*/
 	auto search = satMsgControlMap.find(aka);
@@ -222,7 +222,7 @@ void Reef::saveMessage(std::string aka, RMessage& msg){
 		/*std::cout << "4" << std::endl;*/
 		/*std::cout << "msg tags = " << msg.getTags() << std::endl;*/
 		//insert msg at the back of the queue for this satellite
-		satelliteMsgs[satPosition].emplace_back(&msg);
+		satelliteMsgs[satPosition].emplace_back(msg);
 		/*std::cout << "5" << std::endl;*/
 		/*std::cout << "Message count vorher = " << msgControl.control[1] << std::endl;*/
 		//add 1 to the Number of Messages in this queue
@@ -355,13 +355,12 @@ void Reef::newSatellite(){
 	satelliteAliases.push_back(aka);
 
 	//Add MessageQueue for Satellite
-	std::vector<RMessage> msgQueue;
-	msgQueue.reserve(100);
+	std::vector<std::pair<std::string, std::string> > msgQueue;
 	satelliteMsgs.push_back(msgQueue);
 
 	//Add MessageQueue-Controls for Satellite
 	satelliteMsgControl controls{ { satelliteMsgs.size() - 1, 0 } };
-	satMsgControlMap.insert(std::pair<std::string, satelliteMsgControl> (aka, controls));
+	satMsgControlMap.insert(std::make_pair(aka, controls));
 
 	//Answer Satellite with 1 for confirmation
 	s_send(rep, "1");
@@ -396,11 +395,11 @@ void Reef::recRequest(std::string aka){
 			s_sendmore(rep, std::to_string(msgCount)); //send the number of messages to the satellite			
 			int msgPosition = msgControl.control[0]; //find position of Message Queue in the vector of all Queues
 			std::cout << "current msgPosition =" << msgPosition << std::endl;
-			RMessage& msg = satelliteMsgs[msgPosition][0];
+			std::pair<std::string, std::string> msg = satelliteMsgs[msgPosition][0];
 			std::cout << "vor s_sendmore(rep, msg.getTags());" << std::endl;
-			s_sendmore(rep, msg.getTags()); //send the Message to the satellite
+			s_sendmore(rep, msg.first); //send the Message to the satellite
 			std::cout << "nach s_sendmore(rep, msg.getTags());" << std::endl;
-			s_send(rep, msg.getBody());
+			s_send(rep, msg.second);
 			satelliteMsgs[msgPosition].erase(satelliteMsgs[msgPosition].begin()); //erase the Message from the Queue
 
 			msgControl.control[1]--; //lower the count of stored Messages by 1			

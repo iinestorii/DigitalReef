@@ -43,7 +43,14 @@ private:
 	std::string identity; //own alias in the Reef
 	std::vector<std::string> tag_list; //own interests
 	std::vector<std::string> satelliteAliases; //Aliases of dependend Satellites
+
+	/*old satelliteMsgs, abondend because of copy constructor problems of CJsonArray in jsonplus lib
 	std::vector< std::vector<RMessage> > satelliteMsgs; //Vector of Vector of Messages for each dependend Satellite
+	*/
+
+	// satelliteMsgs[Satellite][ <tags>, <body> ]
+	std::vector< std::vector<std::pair<std::string, std::string> > > satelliteMsgs; // Vector of Vector of Messages for each dependend Satellite
+
 	std::map<std::string, satelliteMsgControl> satMsgControlMap; //Control Numbers concerning the work on the satelliteMsgs
 
 	//ZeroMQ context and sockets for the network
@@ -71,7 +78,7 @@ private:
 	void newSatellite();
 	void pubRequest();
 	void recRequest(std::string);
-	void saveMessage(std::string, RMessage&);
+	void saveMessage(std::string, std::pair<std::string, std::string>);
 
 
 };

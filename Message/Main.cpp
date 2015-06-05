@@ -130,28 +130,28 @@ int main(int argc, char *argv[]){
 	//}
 
 
- std::vector<CJsonArray> arrays;
+ //std::vector<CJsonArray> arrays;
 
 
- CJsonArray array1;
- CJsonArray array2;
- CJsonArray array3;
- CJsonArray array4;
- CJsonArray array5;
+ //CJsonArray array1;
+ //CJsonArray array2;
+ //CJsonArray array3;
+ //CJsonArray array4;
+ //CJsonArray array5;
 
- array1.AddMember("test1");
- array2.AddMember("test1");
- array3.AddMember("test1");
- array4.AddMember("test1");
- array5.AddMember("test1");
+ //array1.AddMember("test1");
+ //array2.AddMember("test1");
+ //array3.AddMember("test1");
+ //array4.AddMember("test1");
+ //array5.AddMember("test1");
 
- arrays.push_back(array1);
- arrays.push_back(array2);
- arrays.push_back(array3);
- arrays.push_back(array4);
- arrays.push_back(array5);
+ //arrays.push_back(array1);
+ //arrays.push_back(array2);
+ //arrays.push_back(array3);
+ //arrays.push_back(array4);
+ //arrays.push_back(array5);
 
- std::string str = arrays[0].ToString();
+ //std::string str = arrays[0].ToString();
 
 	//std::vector< std::vector<RMessage> > satelliteMsgs;
 	//std::vector<RMessage> msgQueue;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]){
 	//satelliteMsgs[0].push_back(pubMessage5);
 
 	//std::cout << "es lief durch" << std::endl;
-int version = 7;
+int version =0;
 		if (version == 4){
 			/* Server 4*/
 			Reef testReef;
@@ -241,21 +241,19 @@ int version = 7;
 			pubMessage1.addSimplex("server4key", "server4data");
 
 
-//			while (true){
-				Sleep(1000);
+			while (true){
+				Sleep(3000);
 				testReef.pubMessage(pubMessage1);
-				Sleep(1000);
-/*				while (testReef.subMessage(subMessage1)){
+				while (testReef.subMessage(subMessage1)){
 					if (subMessage1.containsAnyOf("sat1tag")){
-						std::cout << "Server 4 received Message from sat1" << std::endl;
+						std::cout << "Server 4 received Message from sat1 with body = "<< subMessage1.getString("sat1key") << std::endl;
 						
 					}
 					else {
 						std::cout << "FAILURE: Server 4 Received wrong message" << std::endl;
 					}
-				}	*/		
-//			Sleep(3000);
-//			}
+				}			
+			}
 
 
 
@@ -302,10 +300,10 @@ int version = 7;
 		pubMessage2.addTag("sat1tag");
 		pubMessage2.addSimplex("sat1key", "pub&receive");
 
-	//	while (true){
-			//sat.pub(pubMessage1);
-	//		Sleep(2000);
-			/*if (sat.pubAndReceive(pubMessage2, subMessage1)){
+		while (true){
+			sat.pub(pubMessage1);
+			Sleep(2000);
+			if (sat.pubAndReceive(pubMessage2, subMessage1)){
 				std::cout << "nach sat.pubAndReceive(...)" << std::endl;
 				if (subMessage1.containsAnyOf("server4tag")){
 					std::cout << "Message received from Server 4 via pubAndReceive(...)";
@@ -313,9 +311,9 @@ int version = 7;
 					std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
 				}
 			}
-			Sleep(2000);*/
-			/*while (sat.getWaitingMsgs()){
-				std::cout << "inside while( ... )" << std::endl;*/
+			Sleep(2000);
+			while (sat.getWaitingMsgs()){
+				std::cout << "inside while( ... )" << std::endl;
 				if (sat.receive(subMessage1)){
 					if (subMessage1.containsAnyOf("server4tag")){
 						std::cout << "Message received from Server 4 via receive(...)";
@@ -324,9 +322,9 @@ int version = 7;
 						std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
 					}
 				}
-			//}
-	//		Sleep(2000);
-		//}
+			}
+			Sleep(2000);
+		}
 
 		/*Connect Version 1*/
 	}
