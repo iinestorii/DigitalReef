@@ -138,8 +138,8 @@ bool Reef::subMessage(RMessage& retVal){
 	bool retBool = false;
 	bool queue_Not_Empty = true;
 
-	//loops until all queued Messages are worked off or a Message of interest gets returned (return true;)
-	while (queue_Not_Empty){
+	//loops until all queued Messages are worked off and no Message of interest got returned (return true;)
+	while (queue_Not_Empty && !retBool){
 
 		queue_Not_Empty = false;
 		retVal = RMessage();
@@ -153,14 +153,13 @@ bool Reef::subMessage(RMessage& retVal){
 		if (items[0].revents & ZMQ_POLLIN)
 		{
 			queue_Not_Empty = true;
-			receiveMsg();
+			retBool=receiveMsg(retVal);
 			items[0].revents = 0;
 		}
 
 		//resolve message at subscribe-socket
-		if (items[1].revents & ZMQ_POLLIN)
-		{
-	
+		if (!retBool && (items[1].revents & ZMQ_POLLIN))
+		{	
 			queue_Not_Empty = true;
 
 			s_recv(subscriber);	//empty envelop	
@@ -185,27 +184,30 @@ bool Reef::subMessage(RMessage& retVal){
 				subscriber.connect(adressConnectStr.c_str());
 				
 			} else {
-				if (retVal.containsAnyOf(tag_list)){ //If Tag identifies as Message of interest for this Coral return it
-					retVal.initiateWithJson(bodyStr);
-					queue_Not_Empty = false;
-					retBool = true;
-				}
-				if (retVal.containsAnyOf(satelliteAliases)){ //If Tag identifies as Message of interest for at least one dependent Satellite
-					std::pair<std::string, std::string> msgPair = std::make_pair(tagsStr, bodyStr);
-					for (std::vector<std::string>::iterator it = satelliteAliases.begin(); it != satelliteAliases.end(); ++it) {
-						if (retVal.containsAnyOf(*it)){
-							std::cout << "vor saveMessage" << std::endl;
-							saveMessage(*it, msgPair);
-							std::cout << "nach saveMessage" << std::endl;
-						}
-					}
-				}
+				retBool = checkInterestAndProcess(retVal, bodyStr);
 			}
 		}
 	}
 
 	if (!retBool)retVal = RMessage(); //clear Message
 	return retBool; //no message of interest found
+}
+
+bool Reef::checkInterestAndProcess(RMessage& msg, std::string body){
+	bool retBool = false;
+	if (msg.containsAnyOf(tag_list)){ //If Tag identifies as Message of interest for this Coral return it
+		msg.initiateWithJson(body);
+		retBool = true;
+	}
+	if (msg.containsAnyOf(satelliteAliases)){ //If Tag identifies as Message of interest for at least one dependent Satellite
+		std::pair<std::string, std::string> msgPair = std::make_pair(msg.getTags(), body);
+		for (std::vector<std::string>::iterator it = satelliteAliases.begin(); it != satelliteAliases.end(); ++it) {
+			if (msg.containsAnyOf(*it)){
+				saveMessage(*it, msgPair);
+			}
+		}
+	}
+	return retBool;
 }
 
 void Reef::saveMessage(std::string aka, std::pair<std::string, std::string> msg){
@@ -264,7 +266,8 @@ void Reef::itemsInit(){
 	itemsSet = true;
 }
 
-void Reef::receiveMsg(){
+bool Reef::receiveMsg(RMessage& msg){
+	bool retBool = false;
 	int msgMode = getReceiveMsgMode();
 	std::string aka;
 	switch (msgMode){
@@ -275,25 +278,26 @@ void Reef::receiveMsg(){
 		newSatellite();
 		break;
 	case 2: //publish Messages for a dependent Satellite
-		pubRequest();
+		retBool=pubRequest(msg);
 		s_send(rep, ""); //request socket of satellite needs a reply to unblock
 		break;
 	case 3: //publish Messages for a dependent Satellite, reply with stored Messages for Satellite
 		 aka = s_recv(rep);	
-		pubRequest();
-		std::cout << "vor recRequest case 3" << std::endl;
+		 retBool = pubRequest(msg);
+		//std::cout << "vor recRequest case 3" << std::endl;
 		recRequest(aka);
-		std::cout << "nach recRequest" << std::endl;
+		//std::cout << "nach recRequest" << std::endl;
 		break;
 	case 4: //reply with stored Messages for Satellite
 		aka = s_recv(rep);
-		std::cout << "vor recRequest case 4" << std::endl;
+		//std::cout << "vor recRequest case 4" << std::endl;
 		recRequest(aka);
-		std::cout << "nach recRequest" << std::endl;
+		//std::cout << "nach recRequest" << std::endl;
 		break;
 	default: //TODO Throw Error?
 		break;
 	}	
+	return retBool;
 }
 
 //checks the first Frame of a received Message for the intended Mode of the sender
@@ -367,15 +371,19 @@ void Reef::newSatellite(){
 }
 
 // pubRequest by one of the Satellites, this Server just forwards it by publishing it
-void Reef::pubRequest(){
-	//TODO!!!!!!!!!!!!!!!!!!
-	// Check if msg is of interest for this server or other dependent satellites
-	//!!!!!!!!!!!!!!!!!!!!!!
-	zmq::message_t message;
-
+bool Reef::pubRequest(RMessage& msg){
+	msg = RMessage();
+	bool retBool;
+	std::string tagsStr = s_recv(rep); //receive message tags
+	std::string bodyStr = s_recv(rep); //receive messagebody
+	CJsonArray tagsArray = jsonToArray(tagsStr); //parse Tags
+	tagsInitMessage(msg, tagsArray); //initiate msg with the tags
+	
+	retBool = checkInterestAndProcess(msg, bodyStr);
 	s_sendmore(publisher, ""); //send empty envelope
-	s_sendmore(publisher, s_recv(rep));	//receive tag-part of message and publish it
-	s_send(publisher, s_recv(rep)); //receive body-part of message and publish itcout
+	s_sendmore(publisher, tagsStr);	//receive tag-part of message and publish it
+	s_send(publisher, bodyStr); //receive body-part of message and publish itcout
+	return retBool;
 }
 
 //recRequest by one of the Satellites, reply with number of stored msgs and the oldest stored msg
@@ -387,18 +395,18 @@ void Reef::recRequest(std::string aka){
 		//get the Controlnumbers for this satellite
 		satelliteMsgControl& msgControl = search->second;
 		int msgCount = msgControl.control[1]; //number of stored Messages for this Satellite
-		std::cout << "current msgCount =" << msgCount << std::endl;
+		//std::cout << "current msgCount =" << msgCount << std::endl;
 		if (!msgCount){
 			s_send(rep, std::to_string(msgCount)); //send the number of messages to the satellite
 		}
 		else{
 			s_sendmore(rep, std::to_string(msgCount)); //send the number of messages to the satellite			
 			int msgPosition = msgControl.control[0]; //find position of Message Queue in the vector of all Queues
-			std::cout << "current msgPosition =" << msgPosition << std::endl;
+			//std::cout << "current msgPosition =" << msgPosition << std::endl;
 			std::pair<std::string, std::string> msg = satelliteMsgs[msgPosition][0];
-			std::cout << "vor s_sendmore(rep, msg.getTags());" << std::endl;
+			//std::cout << "vor s_sendmore(rep, msg.getTags());" << std::endl;
 			s_sendmore(rep, msg.first); //send the Message to the satellite
-			std::cout << "nach s_sendmore(rep, msg.getTags());" << std::endl;
+			//std::cout << "nach s_sendmore(rep, msg.getTags());" << std::endl;
 			s_send(rep, msg.second);
 			satelliteMsgs[msgPosition].erase(satelliteMsgs[msgPosition].begin()); //erase the Message from the Queue
 

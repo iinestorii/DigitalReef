@@ -72,11 +72,12 @@ private:
 	const CJsonArray jsonToArray(std::string);
 	void tagsInitMessage(RMessage&, CJsonArray&);
 	
-	void receiveMsg();
+	bool checkInterestAndProcess(RMessage&, std::string); //checks own and Satellite interest in RMessage and processes it acordingly
+	bool receiveMsg(RMessage&);
 	int Reef::getReceiveMsgMode();
 	void newServer();
 	void newSatellite();
-	void pubRequest();
+	bool pubRequest(RMessage&);
 	void recRequest(std::string);
 	void saveMessage(std::string, std::pair<std::string, std::string>);
 

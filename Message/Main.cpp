@@ -222,7 +222,7 @@ int main(int argc, char *argv[]){
 
 	//std::cout << "es lief durch" << std::endl;
 int version =0;
-		if (version == 4){
+		if (version == 5){
 			/* Server 4*/
 			Reef testReef;
 			RMessage subMessage1;
@@ -259,29 +259,28 @@ int version =0;
 
 		/*Server 4*/
 		}
-	//if (version == 4){
-	//	/* Server 4 Simple Version*/
-	//	Reef testReef;
-	//	RMessage pubMessage1;
+		else if (version == 4){
+			/* Satellite Version 1*/
+			ReefSatellite sat;
+			RMessage pubMessage1;
+
+			sat.connect("Sat2", "127.0.0.1:5565"); //initiate version rep-port
+			std::cout << "Sat connected to Reef" << std::endl;
 
 
-	//	testReef.initiate("Start", "127.0.0.1", "5575", "5577");
-	//	std::cout << "Reef initiated" << std::endl;
+			pubMessage1.addTag("sat2tag");
+			pubMessage1.addTag("Sat1");
+			pubMessage1.addSimplex("sat2key", "pub");
 
-	//	testReef.connect("Server4", "127.0.0.1:5575", "127.0.0.1:5565"); //connects to Server 1
-	//	std::cout << "Reef connected" << std::endl;
 
-	//	pubMessage1.addTag("server4tag");
-	//	pubMessage1.addTag("Sat1");
-	//	pubMessage1.addSimplex("server4key", "server4data");
+			while (true){
+				sat.pub(pubMessage1);
+				Sleep(2000);
+			}
 
-	//	while (true){
-	//		testReef.pubMessage(pubMessage1);			
-	//		Sleep(3000);
-	//	}
+			/*Sat Version 2*/
+		}
 
-	//	/*Server 4 simple version*/
-//	}
 	else if (version == 3){
 		/* Satellite Version 1*/
 		ReefSatellite sat;
@@ -306,8 +305,11 @@ int version =0;
 			if (sat.pubAndReceive(pubMessage2, subMessage1)){
 				std::cout << "nach sat.pubAndReceive(...)" << std::endl;
 				if (subMessage1.containsAnyOf("server4tag")){
-					std::cout << "Message received from Server 4 via pubAndReceive(...)";
-				}				else {
+					std::cout << "Message received from Server 4 via pubAndReceive(...)" << std::endl;
+				}	else if (subMessage1.containsAnyOf("sat2tag")){
+					std::cout << "Message received from sat 2 via pubAndReceive(...)" << std::endl;
+				}
+				else {
 					std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
 				}
 			}
@@ -316,7 +318,10 @@ int version =0;
 				std::cout << "inside while( ... )" << std::endl;
 				if (sat.receive(subMessage1)){
 					if (subMessage1.containsAnyOf("server4tag")){
-						std::cout << "Message received from Server 4 via receive(...)";
+						std::cout << "Message received from Server 4 via receive(...)" << std::endl;
+					}
+					else if (subMessage1.containsAnyOf("sat2tag")){
+						std::cout << "Message received from sat 2 via Receive(...)" << std::endl;
 					}
 					else {
 						std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
@@ -449,12 +454,19 @@ int version =0;
 		testReef.initiate("Start", "127.0.0.1", "5563", "5565");
 		std::cout << "Reef initiated" << std::endl;
 
+		testReef.addTag("sat2tag");
+
 
 		while (true){
 		
 			
 			while (testReef.subMessage(subMessage)){
-
+				if (subMessage.containsAnyOf("sat2tag")){
+					std::cout << "Received Sat2 Message with body =" << subMessage.getString("sat2key")<< std::endl;
+				}
+				else {
+					std::cout << "Failure, received wrong message" << std::endl;
+				}
 			}
 		}
 
