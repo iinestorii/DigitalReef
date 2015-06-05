@@ -55,8 +55,8 @@ void ReefSatellite::pub(RMessage& pub){
 }
 
 bool ReefSatellite::receive(RMessage& rec){
-	s_send(req, "4");
-	s_sendmore(req, identity);
+	s_sendmore(req, "4");
+	s_send(req, identity.c_str());
 	return receiveMessage(rec);
 }
 

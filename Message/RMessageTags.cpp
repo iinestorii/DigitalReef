@@ -9,6 +9,11 @@ RMessageTags::RMessageTags()
 
 RMessageTags::~RMessageTags()
 {
+ }
+
+RMessageTags::RMessageTags(const RMessageTags * tags){
+	json_array = (CJsonArray&)tags->json_array;
+	
 }
 
 void RMessageTags::addTag(std::string tag){
@@ -33,6 +38,7 @@ void RMessageTags::initiateTagsWithArray(CJsonArray& jsonArray){
 void RMessageTags::setArray(CJsonArray& array){
 	json_array = array;
 }
+
 
 bool RMessageTags::containsAnyOf(char* input_tag){
 	

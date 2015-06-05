@@ -5,6 +5,11 @@ RMessage::RMessage(void){
 	
 }
 
+RMessage::RMessage(const RMessage * msg){
+	tags=(RMessageTags&)msg->tags;
+	body = msg->body;
+}
+
 
 RMessage::~RMessage(void){
 

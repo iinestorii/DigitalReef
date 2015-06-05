@@ -26,7 +26,7 @@ public:
 
 	RMessageTags();
 	~RMessageTags();
-
+	RMessageTags(const RMessageTags * value);
 private:
 	CJsonArray json_array;
 };

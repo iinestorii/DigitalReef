@@ -48,6 +48,7 @@ public:
 	std::string getBody();
 	RMessage();
 	~RMessage();
+	RMessage(const RMessage * value);
 
 
 private:

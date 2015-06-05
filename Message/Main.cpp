@@ -117,14 +117,116 @@ int main(int argc, char *argv[]){
 	std::cout << "True_Tags: " << msg2.containsAnyOf(string_vector_true) << std::endl;
 	
 	*/
-	int version =0;
 
+
+	/*std::vector< std::vector<std::string> > satelliteMsgs;
+	std::vector<std::string> msgQueue;
+	satelliteMsgs.push_back(msgQueue);
+	std::string str;*/
+
+	//for (int i = 0; i < 100; i++){
+	//	str = "test";
+	//	satelliteMsgs[0].emplace_back(&str);
+	//}
+
+
+ std::vector<CJsonArray> arrays;
+
+
+ CJsonArray array1;
+ CJsonArray array2;
+ CJsonArray array3;
+ CJsonArray array4;
+ CJsonArray array5;
+
+ array1.AddMember("test1");
+ array2.AddMember("test1");
+ array3.AddMember("test1");
+ array4.AddMember("test1");
+ array5.AddMember("test1");
+
+ arrays.push_back(array1);
+ arrays.push_back(array2);
+ arrays.push_back(array3);
+ arrays.push_back(array4);
+ arrays.push_back(array5);
+
+ std::string str = arrays[0].ToString();
+
+	//std::vector< std::vector<RMessage> > satelliteMsgs;
+	//std::vector<RMessage> msgQueue;
+	//satelliteMsgs.push_back(msgQueue);
+
+	//RMessage pubMessage1;
+	//RMessage pubMessage2;
+	//RMessage pubMessage3;
+	//RMessage pubMessage4;
+	//RMessage pubMessage5;
+
+	//
+
+	//pubMessage1.addTag("server4tag");
+	//pubMessage1.addTag("Sat1");
+	//pubMessage1.addSimplex("server4key", "server4data");
+	//pubMessage2.addTag("server4tag");
+	//pubMessage2.addTag("Sat1");
+	//pubMessage2.addSimplex("server4key", "server4data");
+	//pubMessage3.addTag("server4tag");
+	//pubMessage3.addTag("Sat1");
+	//pubMessage3.addSimplex("server4key", "server4data");
+	//pubMessage4.addTag("server4tag");
+	//pubMessage4.addTag("Sat1");
+	//pubMessage4.addSimplex("server4key", "server4data");
+	//pubMessage5.addTag("server4tag");
+	//pubMessage5.addTag("Sat1");
+	//pubMessage5.addSimplex("server4key", "server4data");
+
+	//satelliteMsgs[0].emplace_back(pubMessage1);
+	//satelliteMsgs[0].emplace_back(pubMessage2);
+	//satelliteMsgs[0].emplace_back(pubMessage3);
+	//satelliteMsgs[0].emplace_back(pubMessage4);
+	//satelliteMsgs[0].emplace_back(pubMessage5);
+	//std::string tagggs = satelliteMsgs[0][0].getTags();
+
+	//std::vector< std::vector<CJsonArray> > satelliteMsgs;
+	//std::vector<CJsonArray> msgQueue;
+	//satelliteMsgs.push_back(msgQueue);
+
+	//CJsonArray pubMessage1;
+	//CJsonArray pubMessage2;
+	//CJsonArray pubMessage3;
+	//CJsonArray pubMessage4;
+	//CJsonArray pubMessage5;
+
+	//CJsonObject object1;
+	//CJsonObject object2;
+	//CJsonObject object3;
+	//CJsonObject object4;
+	//CJsonObject object5;
+
+	//pubMessage1.AddMember("test1");
+	//pubMessage1.AddMember("test11");
+	//pubMessage1.AddMember("test12");
+	//pubMessage1.AddMember("test13");
+	//pubMessage2.AddMember("test2");
+	//pubMessage3.AddMember("test3");
+	//pubMessage4.AddMember("test4");
+	//pubMessage5.AddMember("test5");
+
+
+	//satelliteMsgs[0].push_back(pubMessage1);
+	//satelliteMsgs[0].push_back(pubMessage2);
+	//satelliteMsgs[0].push_back(pubMessage3);
+	//satelliteMsgs[0].push_back(pubMessage4);
+	//satelliteMsgs[0].push_back(pubMessage5);
+
+	//std::cout << "es lief durch" << std::endl;
+int version = 7;
 		if (version == 4){
 			/* Server 4*/
 			Reef testReef;
 			RMessage subMessage1;
 			RMessage pubMessage1;
-
 
 			testReef.initiate("Start", "127.0.0.1", "5575", "5577");
 			std::cout << "Reef initiated" << std::endl;
@@ -139,9 +241,11 @@ int main(int argc, char *argv[]){
 			pubMessage1.addSimplex("server4key", "server4data");
 
 
-			while (true){
+//			while (true){
+				Sleep(1000);
 				testReef.pubMessage(pubMessage1);
-				while (testReef.subMessage(subMessage1)){
+				Sleep(1000);
+/*				while (testReef.subMessage(subMessage1)){
 					if (subMessage1.containsAnyOf("sat1tag")){
 						std::cout << "Server 4 received Message from sat1" << std::endl;
 						
@@ -149,12 +253,37 @@ int main(int argc, char *argv[]){
 					else {
 						std::cout << "FAILURE: Server 4 Received wrong message" << std::endl;
 					}
-				}			
-				Sleep(1000);
-			}
+				}	*/		
+//			Sleep(3000);
+//			}
 
-			/*Server 4*/
+
+
+		/*Server 4*/
 		}
+	//if (version == 4){
+	//	/* Server 4 Simple Version*/
+	//	Reef testReef;
+	//	RMessage pubMessage1;
+
+
+	//	testReef.initiate("Start", "127.0.0.1", "5575", "5577");
+	//	std::cout << "Reef initiated" << std::endl;
+
+	//	testReef.connect("Server4", "127.0.0.1:5575", "127.0.0.1:5565"); //connects to Server 1
+	//	std::cout << "Reef connected" << std::endl;
+
+	//	pubMessage1.addTag("server4tag");
+	//	pubMessage1.addTag("Sat1");
+	//	pubMessage1.addSimplex("server4key", "server4data");
+
+	//	while (true){
+	//		testReef.pubMessage(pubMessage1);			
+	//		Sleep(3000);
+	//	}
+
+	//	/*Server 4 simple version*/
+//	}
 	else if (version == 3){
 		/* Satellite Version 1*/
 		ReefSatellite sat;
@@ -173,10 +302,10 @@ int main(int argc, char *argv[]){
 		pubMessage2.addTag("sat1tag");
 		pubMessage2.addSimplex("sat1key", "pub&receive");
 
-		while (true){
-			sat.pub(pubMessage1);
-			Sleep(2000);
-			if (sat.pubAndReceive(pubMessage2, subMessage1)){
+	//	while (true){
+			//sat.pub(pubMessage1);
+	//		Sleep(2000);
+			/*if (sat.pubAndReceive(pubMessage2, subMessage1)){
 				std::cout << "nach sat.pubAndReceive(...)" << std::endl;
 				if (subMessage1.containsAnyOf("server4tag")){
 					std::cout << "Message received from Server 4 via pubAndReceive(...)";
@@ -184,9 +313,9 @@ int main(int argc, char *argv[]){
 					std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
 				}
 			}
-			Sleep(2000);
-			while (sat.getWaitingMsgs()){
-				std::cout << "inside while( ... )" << std::endl;
+			Sleep(2000);*/
+			/*while (sat.getWaitingMsgs()){
+				std::cout << "inside while( ... )" << std::endl;*/
 				if (sat.receive(subMessage1)){
 					if (subMessage1.containsAnyOf("server4tag")){
 						std::cout << "Message received from Server 4 via receive(...)";
@@ -195,13 +324,36 @@ int main(int argc, char *argv[]){
 						std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
 					}
 				}
-			}
-			Sleep(2000);
-		}
+			//}
+	//		Sleep(2000);
+		//}
 
 		/*Connect Version 1*/
 	}
-	
+	//else if (version == 3){
+	//	/* Satellite Version 1 Simple*/
+	//	ReefSatellite sat;
+	//	RMessage subMessage1;
+
+	//	sat.connect("Sat1", "127.0.0.1:5565"); //initiate version rep-port
+	//	std::cout << "Sat connected to Reef" << std::endl;
+
+	//	while (true){
+	//		Sleep(2000);
+	//		while (sat.getWaitingMsgs()){
+	//			std::cout << "inside while( ... )" << std::endl;
+	//			if (sat.receive(subMessage1)){
+	//				if (subMessage1.containsAnyOf("server4tag")){
+	//					std::cout << "Message received from Server 4 via receive(...)";
+	//				}
+	//				else {
+	//					std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
+	//				}
+	//			}
+	//		}
+	//	}
+
+
 	else if (version == 2){
 		/* Connect Version 2*/
 		Reef testReef;
@@ -299,43 +451,13 @@ int main(int argc, char *argv[]){
 		testReef.initiate("Start", "127.0.0.1", "5563", "5565");
 		std::cout << "Reef initiated" << std::endl;
 
-		testReef.addTag("echo");
-		testReef.addTag("coral1");
-		testReef.addTag("coral2");
-
-		pubMessage1.addTag("Ping");
-		pubMessage1.addSimplex("echo", "Pong");
-
-
-		pubMessage2.addTag("coral0");
-		pubMessage2.addSimplex("coral0key", "coral0data");
-		bool pong_received = false;
-		bool pong = false;
 
 		while (true){
-			if (!pong_received){
-				testReef.pubMessage(pubMessage1);
-			}
-			Sleep(700);
+		
+			
 			while (testReef.subMessage(subMessage)){
-				if (subMessage.containsAnyOf("echo")){
-					pong_received = true;
-					pong = true;					
-					std::cout << "Pong" << std::endl;
-					
-				}
-				else if (subMessage.containsAnyOf("coral1")){
-					std::cout << subMessage.getString("coral1key") << std::endl;
-				}
-				else if (subMessage.containsAnyOf("coral2")){
-					std::cout << subMessage.getString("coral2key") << std::endl;
-				}
+
 			}
-			if (pong){
-				testReef.pubMessage(pubMessage1);
-				pong = false;
-			}
-			testReef.pubMessage(pubMessage2);
 		}
 
 		/*Initiate Version*/

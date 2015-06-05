@@ -8,7 +8,7 @@ Reef::Reef() :
 	publisher(context, ZMQ_PUB),
 	subscriber(context, ZMQ_SUB),
 	req(context, ZMQ_REQ),
-	rep(context, ZMQ_REP) 
+	rep(context, ZMQ_REP)
 {}
 
 
@@ -190,12 +190,13 @@ bool Reef::subMessage(RMessage& retVal){
 					retBool = true;
 				}
 				if (retVal.containsAnyOf(satelliteAliases)){ //If Tag identifies as Message of interest for at least one dependent Satellite
-					std::cout << "inside if (retVal.containsAnyOf(satelliteAliases)){" << std::endl;
 					retVal.initiateWithJson(body);
 
 					for (std::vector<std::string>::iterator it = satelliteAliases.begin(); it != satelliteAliases.end(); ++it) {
 						if (retVal.containsAnyOf(*it)){
+							std::cout << "vor saveMessage" << std::endl;
 							saveMessage(*it, retVal);
+							std::cout << "nach saveMessage" << std::endl;
 						}
 					}
 				}
@@ -209,19 +210,24 @@ bool Reef::subMessage(RMessage& retVal){
 
 void Reef::saveMessage(std::string aka, RMessage& msg){
 	//find satellite by alias in the map
+	/*std::cout << "0"<< std::endl;*/
 	auto search = satMsgControlMap.find(aka);
-
+	/*std::cout << "1" << std::endl;*/
 	if (search != satMsgControlMap.end()) { //if sat has been found
-
+		/*std::cout << "2" << std::endl;*/
 		//get the Controlnumbers for this satellite
-		satelliteMsgControl msgControl = search->second;
+		satelliteMsgControl& msgControl = search->second;
+		/*std::cout << "3" << std::endl;*/
 		int satPosition = msgControl.control[0];
-
+		/*std::cout << "4" << std::endl;*/
+		/*std::cout << "msg tags = " << msg.getTags() << std::endl;*/
 		//insert msg at the back of the queue for this satellite
-		satelliteMsgs[satPosition].push_back(msg);
-
+		satelliteMsgs[satPosition].emplace_back(&msg);
+		/*std::cout << "5" << std::endl;*/
+		/*std::cout << "Message count vorher = " << msgControl.control[1] << std::endl;*/
 		//add 1 to the Number of Messages in this queue
 		search->second.control[1]++;
+		/*std::cout << "Message count nachher = " << msgControl.control[1] << std::endl;*/
 	}
 }
 
@@ -275,11 +281,15 @@ void Reef::receiveMsg(){
 	case 3: //publish Messages for a dependent Satellite, reply with stored Messages for Satellite
 		 aka = s_recv(rep);	
 		pubRequest();
+		std::cout << "vor recRequest case 3" << std::endl;
 		recRequest(aka);
+		std::cout << "nach recRequest" << std::endl;
 		break;
 	case 4: //reply with stored Messages for Satellite
 		aka = s_recv(rep);
+		std::cout << "vor recRequest case 4" << std::endl;
 		recRequest(aka);
+		std::cout << "nach recRequest" << std::endl;
 		break;
 	default: //TODO Throw Error?
 		break;
@@ -346,6 +356,7 @@ void Reef::newSatellite(){
 
 	//Add MessageQueue for Satellite
 	std::vector<RMessage> msgQueue;
+	msgQueue.reserve(100);
 	satelliteMsgs.push_back(msgQueue);
 
 	//Add MessageQueue-Controls for Satellite
@@ -370,33 +381,29 @@ void Reef::pubRequest(){
 
 //recRequest by one of the Satellites, reply with number of stored msgs and the oldest stored msg
 void Reef::recRequest(std::string aka){	
-	std::cout << "Anfang recRequest(...)" << std::endl;
 	//find satellite by alias in the map
 	auto search = satMsgControlMap.find(aka);
 
 	if (search != satMsgControlMap.end()) { //if sat has been found
-		std::cout << "in if (search != satMsgControlMap.end())" << std::endl;
 		//get the Controlnumbers for this satellite
-		satelliteMsgControl msgControl = search->second;
+		satelliteMsgControl& msgControl = search->second;
 		int msgCount = msgControl.control[1]; //number of stored Messages for this Satellite
-		std::cout << "Message count =" << msgCount << std::endl;
+		std::cout << "current msgCount =" << msgCount << std::endl;
 		if (!msgCount){
-			std::cout << "in if (!msgCount){" << std::endl;
 			s_send(rep, std::to_string(msgCount)); //send the number of messages to the satellite
 		}
 		else{
-			std::cout << "in else{" << std::endl;
 			s_sendmore(rep, std::to_string(msgCount)); //send the number of messages to the satellite			
 			int msgPosition = msgControl.control[0]; //find position of Message Queue in the vector of all Queues
-			std::cout << "Message Position =" << msgPosition << std::endl;
-			RMessage msg = satelliteMsgs[msgPosition][0]; //get the oldest Message
+			std::cout << "current msgPosition =" << msgPosition << std::endl;
+			RMessage& msg = satelliteMsgs[msgPosition][0];
+			std::cout << "vor s_sendmore(rep, msg.getTags());" << std::endl;
 			s_sendmore(rep, msg.getTags()); //send the Message to the satellite
+			std::cout << "nach s_sendmore(rep, msg.getTags());" << std::endl;
 			s_send(rep, msg.getBody());
-			std::cout << "vor erase"<< std::endl;
 			satelliteMsgs[msgPosition].erase(satelliteMsgs[msgPosition].begin()); //erase the Message from the Queue
-			std::cout << "nach erase" << std::endl;
-			msgControl.control[1]--; //lower the count of stored Messages by 1
-			
+
+			msgControl.control[1]--; //lower the count of stored Messages by 1			
 		}
 	}else{
 		//TODO!!!!!!!!!!!!!!!!!!!!
