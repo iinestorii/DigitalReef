@@ -92,6 +92,7 @@
     <ClInclude Include="RMessageTags.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="OlderMain.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Reef.cpp" />
     <ClCompile Include="ReefSatellite.cpp" />

@@ -11,33 +11,40 @@ RMessageArray::~RMessageArray(void)
 {
 }
 
-
+/*
 void RMessageArray::addSimplex(char * value){
 	json_array.AddMember(value);
 }
-
+*/
 void RMessageArray::addSimplex(int value){
 	json_array.AddMember((jint)value);
+	CUR_SIZE = CUR_SIZE + std::to_string(value).size() + 1;
 }
 
-void RMessageArray::addSimplex(std::string value){
-
+void RMessageArray::addSimplex(std::string value){	
 	json_array.AddMember(value);
+	CUR_SIZE = CUR_SIZE +  value.size() + 3;
 }
 
 void RMessageArray::addSimplex(bool value){
 	json_array.AddMember(value);
+	int valueSize=0;
+	if (value) valueSize = 4;
+	else valueSize = 5;
+
+	CUR_SIZE = CUR_SIZE + valueSize + 1;
 }
 
 void RMessageArray::addInnerBody(RMessageBody  &innerbody){
 	CJsonObject  &innerObject = innerbody.getObject();
 	json_array.AddMember(&innerObject);
+	CUR_SIZE = CUR_SIZE + innerbody.getSize() + 1;
 
 }
 
-void RMessageArray::addArray(std::string key){
-	CJsonArray innerArray;
-	json_array.AddMember(&innerArray);
+void RMessageArray::addArray(RMessageArray &value){
+	json_array.AddMember(&value.getArray());
+	CUR_SIZE = CUR_SIZE + value.getSize() + 1;
 }
 
 CJsonArray RMessageArray::getArray(){
@@ -46,6 +53,7 @@ CJsonArray RMessageArray::getArray(){
 
 void RMessageArray::setArray(CJsonArray& array){
 	json_array = array;
+	CUR_SIZE = array.ToString().size();
 }
 
 std::string RMessageArray::toString(){
@@ -130,3 +138,6 @@ RMessageBody& RMessageArray::getInnerBody(int key){
 	throw CJsonError(INVALID_PARAM);
 }
 
+int RMessageArray::getSize(){
+	return CUR_SIZE;
+}

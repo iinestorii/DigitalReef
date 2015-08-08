@@ -7,11 +7,109 @@
 #include <ReefSatellite.h>
 
 int main(int argc, char *argv[]){
-
-	int version = 0;
-	 
 	
-	if (version == 4){
+	int version = 0;
+	/*
+	std::string testString = "\"\"\"\"\"";
+	std::cout << testString<< ", size: "<<testString.size()<< std::endl;
+
+	CJsonObject objTest;
+	objTest.AddPare("key", true);
+	std::string testStringObject = objTest.ToString();
+	std::cout << testStringObject << ", size: " << testStringObject.size() << std::endl;
+	*/
+	RMessage rmessage;
+
+	std::string key0= "key";
+	std::string str= "valdfgdgdgdgdg";
+
+	bool boo = true;
+
+	int inte = 999;
+
+	RMessageBody inBody;
+	inBody.addSimplex("key001", "valsdfgfgfgfgfgfgfgfgfgfgue");
+	inBody.addSimplex("key002", false);
+	inBody.addSimplex("key001", 999999999);
+
+	RMessageArray inArray;
+	inArray.addSimplex("value");
+	inArray.addSimplex(false);
+	inArray.addSimplex(9999);
+	std::string tempStr;
+
+	int answer = 0;
+	rmessage.addTag("sat1");
+	for (int i = 0; i <5; i++){
+	
+		if (i < 100){
+			
+			tempStr = key0 +  std::to_string(i);
+			answer=rmessage.addSimplex(tempStr, str);
+		}
+		else if (i < 200){
+			tempStr = key0 + std::to_string(i);
+			answer = rmessage.addSimplex(tempStr, boo);
+		}
+		else if (i < 300){
+			tempStr = key0 + std::to_string(i);
+			answer = rmessage.addSimplex(tempStr, inte);
+		}
+		else if (i < 400){
+			tempStr = key0 + std::to_string(i);
+			answer = rmessage.addInnerBody(tempStr, inBody);
+		}
+		else{
+			tempStr = key0 + std::to_string(i);
+			answer = rmessage.addArray(tempStr, inArray);
+		}
+		if (answer == -1){
+			std::cout << "body of message full!" << std::endl;
+			answer = 0;
+		}
+		
+	}
+
+	std::cout << "getSize(): " << rmessage.getBody().size() << std::endl;
+
+	if (version == 6){
+		/* Server big Message test*/
+		Reef testReef;
+
+		testReef.initiate("Start", "127.0.0.1", "5567", "5569");
+		testReef.connect("Server2", "127.0.0.1:5567", "127.0.0.1:5565");
+		std::cout << "Reef connected" << std::endl;
+
+		testReef.addTag("crunchedNumbers");
+		
+		while (true){
+			testReef.pubMessage(rmessage);
+			Sleep(100);
+		}
+
+		/*Server big Message test*/
+	}
+
+	else if (version == 5){ //big message test
+		/* Satellite1*/
+		ReefSatellite sat;
+		RMessage subMessage1;
+
+		sat.connect("sat1", "127.0.0.1:5565"); //initiate version rep-port
+		std::cout << "Sat connected to Reef" << std::endl;
+
+		while (true){
+			if (sat.receive(subMessage1)){
+
+				std::cout << "message received" << std::endl;
+			}
+			Sleep(4000);
+
+		}
+	}
+
+	
+	else if (version == 4){
 		/*Satellite2*/
 		ReefSatellite sat;
 		RMessage pubMessage1;
@@ -140,9 +238,13 @@ int main(int argc, char *argv[]){
 					std::cout << "Received Message from Server 3!" << std::endl;
 				}
 			}
+			//subMessage.clear();
+			
 		}
+
 
 		/*Server 1*/
 	}
 	return 0;
 }
+

@@ -13,21 +13,29 @@
 //==================================================
 class RMessageTags
 {
+	friend class RMessage;
 public:
-	void addTag(std::string);
-	void addTag(char*);
+	int addTag(std::string);
+	int addTag(char*);
 
 	bool containsAnyOf(char*);
 	bool containsAnyOf(std::string);
 	bool containsAnyOf(std::vector<std::string>);
+
+	RMessageTags();
+	~RMessageTags();
+
+protected:
 	void initiateTagsWithArray(CJsonArray&); //should be protected
 	void setArray(CJsonArray&);
 	std::string getTags();
 
-	RMessageTags();
-	~RMessageTags();
 	RMessageTags(const RMessageTags * value);
+
+	void clear();
 private:
+	int CUR_SIZE=1;
+	int MAX_SIZE = 70;
 	CJsonArray json_array;
 };
 #endif

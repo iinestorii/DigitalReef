@@ -21,15 +21,15 @@
 // class declaration
 //==================================================
 class RMessageArray{
+	friend class RMessageBody;
 public:
 	void addSimplex(int);
 	void addSimplex(std::string);
 	void addSimplex(bool);
-	void addSimplex(char*);
 	void addInnerBody(RMessageBody&);
-	void addArray(std::string);
+	void addArray(RMessageArray&);
 	CJsonArray getArray();
-	void setArray(CJsonArray&);
+	
 	std::string toString();
 	RMessageArray();
 	~RMessageArray();
@@ -39,11 +39,13 @@ public:
 	bool getBool(int);
 	RMessageArray& getArray(int);
 	RMessageBody& getInnerBody(int);
+	int getSize();
 
-	
+protected:
+	void setArray(CJsonArray&);
 private:
 	CJsonArray json_array;
-
+	int CUR_SIZE = 1;
 
 
 };

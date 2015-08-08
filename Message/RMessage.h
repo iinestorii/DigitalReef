@@ -14,23 +14,20 @@
 // class declaration
 //==================================================
 class RMessage{
+	friend class Reef;
+	friend class ReefSatellite;
 public:
-	void addSimplex(std::string, int);
-	void addSimplex(std::string, std::string);
-	void addSimplex(std::string, bool);
-	void addSimplex(std::string, char*);
-	void addArray(std::string, RMessageArray&);
-	void addInnerBody(std::string, RMessageBody&);
+	int addSimplex(std::string, int);
+	int addSimplex(std::string, std::string);
+	int addSimplex(std::string, bool);
+	int addSimplex(std::string, char*);
+	int addArray(std::string, RMessageArray&);
+	int addInnerBody(std::string, RMessageBody&);
 
-	void addTag(char*);
-	void addTag(std::string);
-	void initiateTagsWithArray(CJsonArray*); //should be protected
-	bool containsAnyOf(char*);
-	bool containsAnyOf(std::string);
-	bool containsAnyOf(std::vector<std::string>);
+	int addTag(char*);
+	int addTag(std::string);
+	//should be protected
 
-	void clear();
-	void initiateWithJson(std::string);
 
 	std::string getString(std::string);
 	std::string getString(char*);
@@ -42,14 +39,21 @@ public:
 	RMessageArray& getArray(char*);
 	RMessageBody& getInnerBody(std::string);
 	RMessageBody& getInnerBody(char*);
-
 	std::string getTags();
-
 	std::string getBody();
+
+	bool containsAnyOf(char*);
+	bool containsAnyOf(std::string);
+	bool containsAnyOf(std::vector<std::string>);
+
 	RMessage();
 	~RMessage();
 	RMessage(const RMessage * value);
 
+protected:
+	void initiateTagsWithArray(CJsonArray*);
+	void clear();
+	void initiateWithJson(std::string);
 
 private:
 	RMessageBody body;

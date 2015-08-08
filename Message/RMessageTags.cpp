@@ -13,15 +13,24 @@ RMessageTags::~RMessageTags()
 
 RMessageTags::RMessageTags(const RMessageTags * tags){
 	json_array = (CJsonArray&)tags->json_array;
+	CUR_SIZE = json_array.ToString().size();	
+}
+
+int RMessageTags::addTag(std::string tag){
+	int futureSize = CUR_SIZE + tag.size() + 3;
+	if (futureSize <= MAX_SIZE){
+		CUR_SIZE = futureSize;
+		json_array.AddMember(tag);
+		return 1;
+	}
+	else{
+		return -1;
+	}
 	
 }
 
-void RMessageTags::addTag(std::string tag){
-	json_array.AddMember(tag);
-}
-
-void RMessageTags::addTag(char* tag){
-	json_array.AddMember(tag);
+int RMessageTags::addTag(char* tag){
+	return addTag((std::string)tag);
 }
 
 /*
@@ -37,6 +46,7 @@ void RMessageTags::initiateTagsWithArray(CJsonArray& jsonArray){
 
 void RMessageTags::setArray(CJsonArray& array){
 	json_array = array;
+	CUR_SIZE = array.ToString().size();
 }
 
 
@@ -87,4 +97,10 @@ bool RMessageTags::containsAnyOf(std::vector<std::string> input_tags){
 
 std::string RMessageTags::getTags(){
 	return json_array.ToString();
+}
+
+void RMessageTags::clear(){
+	json_array.~CJsonArray();
+	new (&json_array) CJsonArray();
+	CUR_SIZE = 1;
 }

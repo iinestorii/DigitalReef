@@ -12,35 +12,35 @@ RMessage::RMessage(const RMessage * msg){
 
 
 RMessage::~RMessage(void){
-
+	clear();
 }
 
-void RMessage::addSimplex(std::string key, char * value){
-	body.addSimplex(key, value);
+int RMessage::addSimplex(std::string key, char * value){
+	return body.addSimplex(key, value);
 }
 
-void RMessage::addSimplex(std::string key, int value){
-	body.addSimplex(key, value);
-}
-
-
-void RMessage::addSimplex(std::string key, std::string value){
-
-	body.addSimplex(key, value);
-}
-
-void RMessage::addSimplex(std::string key, bool value){
-
-	body.addSimplex(key, value);
+int RMessage::addSimplex(std::string key, int value){
+	return body.addSimplex(key, value);
 }
 
 
-void RMessage::addArray(std::string key, RMessageArray& array){
-	body.addArray(key, array);
+int RMessage::addSimplex(std::string key, std::string value){
+
+	return body.addSimplex(key, value);
 }
 
-void RMessage::addInnerBody(std::string key, RMessageBody & innerBody){
-	body.addInnerBody(key, innerBody);	
+int RMessage::addSimplex(std::string key, bool value){
+
+	return body.addSimplex(key, value);
+}
+
+
+int RMessage::addArray(std::string key, RMessageArray& array){
+	return body.addArray(key, array);
+}
+
+int RMessage::addInnerBody(std::string key, RMessageBody & innerBody){
+	return body.addInnerBody(key, innerBody);
 }
 
 void RMessage::initiateWithJson(std::string json){
@@ -94,12 +94,12 @@ RMessageBody& RMessage::getInnerBody(char* key){
 	return body.getInnerBody(key);
 }
 
-void RMessage::addTag(std::string tag){
-	tags.addTag(tag);
+int RMessage::addTag(std::string tag){
+	return tags.addTag(tag);
 }
 
-void RMessage::addTag(char* tag){
-	tags.addTag(tag);
+int RMessage::addTag(char* tag){
+	return tags.addTag(tag);
 }
 
 void RMessage::initiateTagsWithArray(CJsonArray* jsonArray){
@@ -123,5 +123,6 @@ std::string RMessage::getTags(){
 }
 
 void RMessage::clear(){
-
+	body.clear();
+	tags.clear();
 }

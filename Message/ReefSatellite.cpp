@@ -48,6 +48,7 @@ bool ReefSatellite::pubAndReceive(RMessage& pub, RMessage& rec){
 
 void ReefSatellite::pub(RMessage& pub){
 	s_sendmore(req, "2");
+	s_sendmore(req, identity.c_str());
 	s_sendmore(req, pub.getTags());
 	s_send(req, pub.getBody());
 	
@@ -69,8 +70,14 @@ bool ReefSatellite::receiveMessage(RMessage& repMsg){
 	waitingMsgs = std::stoi(numberMsgs);
 
 	//if 0 Messages are waiting, non have been sent, return false
-	if (!waitingMsgs){
-		return false;
+	switch (waitingMsgs){
+		case -1: 
+			std::cout << "Error! no entry for Satellite in Server" << std::endl; //TODO Throw Error, attempt to reconnect
+			return false;
+			break;
+		case 0:
+			return false;
+			break;
 	}
 
 	//  Process all parts of the message
@@ -79,6 +86,7 @@ bool ReefSatellite::receiveMessage(RMessage& repMsg){
 
 	//initiate the repMsg
 	tagsInitMessage(repMsg, tags);
+	tags.Clear();
 	repMsg.initiateWithJson(body);
 
 	//lower Number of Waiting Messages as 1 was just received
@@ -103,6 +111,7 @@ const CJsonArray ReefSatellite::jsonToArray(std::string arrayString){
 	std::string objString = "{\"array\":" + arrayString + "}";	//the json string representing the object filled with an array
 	CJsonObject jsonObj = new CJsonObject(CJsonParser::Execute((jstring)objString)); //parsing the json string
 	const CJsonArray* jsonArray = dynamic_cast<const CJsonArray*>(jsonObj["array"]);
+	jsonObj.Clear();
 	return jsonArray;
 }
 
