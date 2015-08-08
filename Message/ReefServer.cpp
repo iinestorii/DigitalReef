@@ -1,9 +1,9 @@
-#include "Reef.h"
+#include "ReefServer.h"
 #include <stdio.h>
 
 
 
-Reef::Reef() :
+ReefServer::ReefServer() :
 	context(1),
 	publisher(context, ZMQ_PUB),
 	subscriber(context, ZMQ_SUB),
@@ -12,11 +12,11 @@ Reef::Reef() :
 {}
 
 
-Reef::~Reef()
+ReefServer::~ReefServer()
 {
 }
 //returns 1 if everything worked as expected, other error codes will follow
-int Reef::connect(std::string aka, std::string ownIp, std::string reefIp){
+int ReefServer::connect(std::string aka, std::string ownIp, std::string reefIp){
 	identity = aka;
 	//make a Request to connect to the reef, saves Reef Addresslist in adr_list
 	connectRequest(aka, ownIp, reefIp);
@@ -26,7 +26,7 @@ int Reef::connect(std::string aka, std::string ownIp, std::string reefIp){
 	return 1;
 }
 
-void Reef::connectRequest(std::string aka, std::string ownIp, std::string reefIp){
+void ReefServer::connectRequest(std::string aka, std::string ownIp, std::string reefIp){
 	std::string ip_str = "tcp://" + reefIp;
 	req.connect(ip_str.c_str());	//connect to 1 Server-Coral of Reef
 	s_sendmore(req, "0");
@@ -45,7 +45,7 @@ void Reef::connectRequest(std::string aka, std::string ownIp, std::string reefIp
 }
 
 //subscribes to each member of the address list adr_list
-void Reef::connectSubscribe(){
+void ReefServer::connectSubscribe(){
 	//variables for the for-loop
 	const CJsonValue* cvn;
 	std::string address;
@@ -69,7 +69,7 @@ void Reef::connectSubscribe(){
 }
 
 //returns 1 if everything worked as expected, other error codes will follow
-int Reef::initiate(std::string aka, std::string ip, std::string pubPort, std:: string repPort){
+int ReefServer::initiate(std::string aka, std::string ip, std::string pubPort, std::string repPort){
 	identity = aka;
 	std::string pubStr = "tcp://*:"+ pubPort;
 	std::string repStr = "tcp://*:" + repPort;
@@ -82,7 +82,7 @@ int Reef::initiate(std::string aka, std::string ip, std::string pubPort, std:: s
 }
 
 //returns 1 if everything worked as expected, other error codes will follow
-int Reef::initiate(std::string aka, std::string ip){
+int ReefServer::initiate(std::string aka, std::string ip){
 	identity = aka;
 	std::string adressListStr = ip + ":5563";
 	publisher.bind("tcp://*:5563");
@@ -93,7 +93,7 @@ int Reef::initiate(std::string aka, std::string ip){
 }
 
 //returns true if tag_list contains tag
-bool Reef::findTag(std::string tag){
+bool ReefServer::findTag(std::string tag){
 	std::vector<std::string>::iterator findIter = std::find(tag_list.begin(), tag_list.end(), tag);
 	if (findIter != tag_list.end()){
 		return true;
@@ -105,18 +105,18 @@ bool Reef::findTag(std::string tag){
 
 //adds a tag to the tag_list if it isn't already in there
 //tag_list is used to filter incoming subscription messages for data of interest
-void Reef::addTag(std::string tag){
+void ReefServer::addTag(std::string tag){
 	if (!findTag(tag)){
 		tag_list.push_back(tag);
 	}	
 }
 
 //removes a tag of the tag_list
-void Reef::removeTag(std::string tag){
+void ReefServer::removeTag(std::string tag){
 	tag_list.erase(std::remove(tag_list.begin(), tag_list.end(), tag), tag_list.end());
 }
 
-void Reef::pubMessage(RMessage& msg){
+void ReefServer::pubMessage(RMessage& msg){
 	s_sendmore(publisher, "");
 	s_sendmore(publisher, msg.getTags());
 	s_send(publisher, msg.getBody());
@@ -129,7 +129,7 @@ void Reef::pubMessage(RMessage& msg){
 //param		RMessage&	in which Message of interest will be safed if found
 //returns	false		if no Message of interest was found
 //			true		if Message of interest was found
-bool Reef::subMessage(RMessage& retVal){
+bool ReefServer::subMessage(RMessage& retVal){
 	
 	//initialize items[] if it isn't already	
 	if (!itemsSet){
@@ -175,12 +175,12 @@ bool Reef::subMessage(RMessage& retVal){
 
 			s_recv(subscriber);	//empty envelop	
 			std::string tagsStr = s_recv(subscriber);		//tags of message
-CJsonArray tagsArray = jsonToArray(tagsStr);	//parse the json-String to CJsonArray
+			CJsonArray tagsArray = jsonToArray(tagsStr);	//parse the json-String to CJsonArray
 			std::string bodyStr = s_recv(subscriber);		//real content of message	
 			
 			//parse the tags of the message and check for own and satellite interest
 			//body parsed only if needed
-tagsInitMessage(retVal, tagsArray);
+			tagsInitMessage(retVal, tagsArray);
 		
 		
 			//reset poll for sub-port
@@ -208,7 +208,7 @@ tagsInitMessage(retVal, tagsArray);
 			} else { //check Message-Tags for own interest or interest of satellites
 				retBool = checkInterestAndProcess(retVal, bodyStr);
 			}
-tagsArray.Clear();
+		tagsArray.Clear();
 		}
 	}
 
@@ -222,7 +222,7 @@ tagsArray.Clear();
 
 //checks	interest of this server in Message, returns true if interested
 //			interest of Satellites dependent of this Server, saves message if interested
-bool Reef::checkInterestAndProcess(RMessage& msg, std::string body){
+bool ReefServer::checkInterestAndProcess(RMessage& msg, std::string body){
 	bool retBool = false;
 
 	//If Tag identifies as Message of interest for this Coral return it
@@ -287,14 +287,14 @@ bool Reef::checkInterestAndProcess(RMessage& msg, std::string body){
 	return retBool;
 }
 
-std::string Reef::checkForMaxMessages(){
+std::string ReefServer::checkForMaxMessages(){
 	if (CUR_MESSAGES >= MAX_MESSAGES){
 		return halveOrDeleteLongestQ();
 	}
 	else return "";
 }
 
-std::string Reef::halveOrDeleteLongestQ(){
+std::string ReefServer::halveOrDeleteLongestQ(){
 
 	//Iterator to find longest Queue in satMsgsControlMap
 	std::map<std::string, satelliteMsgControl>::iterator iter;
@@ -345,7 +345,7 @@ std::string Reef::halveOrDeleteLongestQ(){
 }
 
 //deletes Satellite aka with satelliteMsgs-Position qPosition and updates other Queues about Position change
-void Reef::deleteSat(std::string aka, int qPosition){
+void ReefServer::deleteSat(std::string aka, int qPosition){
 	std::map<std::string, satelliteMsgControl>::iterator iter;
 	//erase the Satellite out of the queue-handling vectors
 	satMsgControlMap.erase(aka);
@@ -358,7 +358,7 @@ void Reef::deleteSat(std::string aka, int qPosition){
 	std::cout << "Sat deleted" << std::endl;
 }
 
-void Reef::saveMessage(std::string aka, std::pair<std::string, std::string> msg){
+void ReefServer::saveMessage(std::string aka, std::pair<std::string, std::string> msg){
 	//find satellite by alias in the map
 	auto search = satMsgControlMap.find(aka);
 	
@@ -383,7 +383,7 @@ void Reef::saveMessage(std::string aka, std::pair<std::string, std::string> msg)
 
 
 
-void Reef::tagsInitMessage(RMessage& msg, CJsonArray& array){
+void ReefServer::tagsInitMessage(RMessage& msg, CJsonArray& array){
 	for (unsigned i = 0; i < array.Size(); i++)
 	{
 		std::string tagtmp = array[i]->ToString();
@@ -396,7 +396,7 @@ void Reef::tagsInitMessage(RMessage& msg, CJsonArray& array){
 *	CJsonArray has not direct way to be parsed with a json-string
 *	This method builds a CJsonObject with an CJsonArray as Member and then extracts the array
 */
-CJsonArray Reef::jsonToArray(std::string arrayString){
+CJsonArray ReefServer::jsonToArray(std::string arrayString){
 	std::string objString = "{\"array\":" + arrayString + "}";	//the json string representing the object filled with an array
 	CJsonObject* jsonObj = CJsonParser::Execute((jstring)objString); //parsing the json string
 	CJsonArray jsonArray = CJsonArray(dynamic_cast<const CJsonArray*>((*jsonObj)["array"]));
@@ -411,13 +411,13 @@ CJsonArray Reef::jsonToArray(std::string arrayString){
 *	we don't want to initialize items[] everytime we poll, so the initialization got outsorced to 
 *	here and the bool itemsSet is used to check befor each Poll if items[] is initialized
 */
-void Reef::itemsInit(){
+void ReefServer::itemsInit(){
 	items[0] = { rep, 0, ZMQ_POLLIN, 0 };
 	items[1] = { subscriber, 0, ZMQ_POLLIN, 0 };
 	itemsSet = true;
 }
 
-bool Reef::receiveMsg(RMessage& msg){
+bool ReefServer::receiveMsg(RMessage& msg){
 	bool retBool = false;
 	int msgMode = getReceiveMsgMode();
 	std::string aka;
@@ -456,7 +456,7 @@ bool Reef::receiveMsg(RMessage& msg){
 }
 
 //sets the Watchlistentry of a Satellite to false
-void Reef::resetWatchlist(std::string aka){
+void ReefServer::resetWatchlist(std::string aka){
 	auto search = satMsgControlMap.find(aka);
 
 	if (search != satMsgControlMap.end()) { //if sat has been found
@@ -466,7 +466,7 @@ void Reef::resetWatchlist(std::string aka){
 }
 
 //checks the first Frame of a received Message for the intended Mode of the sender
-int Reef::getReceiveMsgMode(){
+int ReefServer::getReceiveMsgMode(){
 	zmq::message_t message;
 	rep.recv(&message);
 	std::string msgModeStr = std::string(static_cast<char*>(message.data()), message.size());
@@ -474,7 +474,7 @@ int Reef::getReceiveMsgMode(){
 }
 
 //handles the connection request of a new server coral
-void Reef::newServer(){
+void ReefServer::newServer(){
 
 	std::vector<std::string> frames;
 	zmq::message_t message;
@@ -527,7 +527,7 @@ void Reef::newServer(){
 //while this behaviour offends the location independency, synching multiple servers to avoid it would result in 
 //disproportional overhead
 //this implementation allows the utilization of a simple worker structure without much overhead
-void Reef::newSatellite(){
+void ReefServer::newSatellite(){
 	zmq::message_t message;
 
 	//Receive and save alias of satellite
@@ -551,7 +551,7 @@ void Reef::newSatellite(){
 }
 
 // pubRequest by one of the Satellites, this Server just forwards it by publishing it
-bool Reef::pubRequest(RMessage& msg){
+bool ReefServer::pubRequest(RMessage& msg){
 	msg = RMessage();
 	bool retBool;
 	std::string tagsStr = s_recv(rep); //receive message tags
@@ -568,7 +568,7 @@ bool Reef::pubRequest(RMessage& msg){
 }
 
 //recRequest by one of the Satellites, reply with number of stored msgs and the oldest stored msg
-void Reef::recRequest(std::string aka){	
+void ReefServer::recRequest(std::string aka){
 	//find satellite by alias in the map
 	auto search = satMsgControlMap.find(aka);
 

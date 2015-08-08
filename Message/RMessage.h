@@ -14,7 +14,7 @@
 // class declaration
 //==================================================
 class RMessage{
-	friend class Reef;
+	friend class ReefServer;
 	friend class ReefSatellite;
 public:
 	int addSimplex(std::string, int);
