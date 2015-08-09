@@ -4,11 +4,11 @@
 
 
 ReefServer::ReefServer() :
-	context(1),
-	publisher(context, ZMQ_PUB),
-	subscriber(context, ZMQ_SUB),
-	req(context, ZMQ_REQ),
-	rep(context, ZMQ_REP)
+context(1),
+publisher(context, ZMQ_PUB),
+subscriber(context, ZMQ_SUB),
+req(context, ZMQ_REQ),
+rep(context, ZMQ_REP)
 {}
 
 
@@ -32,7 +32,7 @@ void ReefServer::connectRequest(std::string aka, std::string ownIp, std::string 
 	s_sendmore(req, "0");
 	s_sendmore(req, aka.c_str());	//send wished alias
 	s_send(req, ownIp.c_str());		//send adress of own publisher
-		
+
 	//receive the reply
 	zmq::message_t reply;
 	req.recv(&reply);
@@ -54,24 +54,24 @@ void ReefServer::connectSubscribe(){
 	//iterator for the address-list
 	std::vector <jstring> keys;
 	adr_list.GetNames(keys);
-	keys.erase(std::remove(keys.begin(), keys.end(), identity),keys.end()); //erase own aka to avoid subscribing to own publisher
+	keys.erase(std::remove(keys.begin(), keys.end(), identity), keys.end()); //erase own aka to avoid subscribing to own publisher
 	std::vector<jstring>::iterator it;
 	int connectError = 0;
 
 	//iterate over the address list and subscribe to each publisher
 	for (it = keys.begin(); it != keys.end(); it++)
-		{
-			cvn = adr_list[(*it)];			
-			address = cvn->ToString(); //HIER PROBLEM! address kommt mit Ausführungszeichen. Zunächst nur Workaround.
-			address = "tcp://"+address.substr(1, address.size() - 2);			
-			subscriber.connect(address.c_str()); 
-		}	
+	{
+		cvn = adr_list[(*it)];
+		address = cvn->ToString(); //HIER PROBLEM! address kommt mit Ausführungszeichen. Zunächst nur Workaround.
+		address = "tcp://" + address.substr(1, address.size() - 2);
+		subscriber.connect(address.c_str());
+	}
 }
 
 //returns 1 if everything worked as expected, other error codes will follow
 int ReefServer::initiate(std::string aka, std::string ip, std::string pubPort, std::string repPort){
 	identity = aka;
-	std::string pubStr = "tcp://*:"+ pubPort;
+	std::string pubStr = "tcp://*:" + pubPort;
 	std::string repStr = "tcp://*:" + repPort;
 	std::string adressListStr = ip + ":" + pubPort;
 	publisher.bind(pubStr.c_str());
@@ -106,9 +106,10 @@ bool ReefServer::findTag(std::string tag){
 //adds a tag to the tag_list if it isn't already in there
 //tag_list is used to filter incoming subscription messages for data of interest
 void ReefServer::addTag(std::string tag){
-	if (!findTag(tag)){
+	std::string sys_msg = "SYS_newMember";
+	if (!findTag(tag)&&tag!=sys_msg){
 		tag_list.push_back(tag);
-	}	
+	}
 }
 
 //removes a tag of the tag_list
@@ -130,12 +131,12 @@ void ReefServer::pubMessage(RMessage& msg){
 //returns	false		if no Message of interest was found
 //			true		if Message of interest was found
 bool ReefServer::subMessage(RMessage& retVal){
-	
+
 	//initialize items[] if it isn't already	
 	if (!itemsSet){
 		itemsInit();
 	}
-	
+
 	bool retBool = false;
 	bool queue_Not_Empty = true;
 
@@ -161,7 +162,7 @@ bool ReefServer::subMessage(RMessage& retVal){
 			//If the Message is from pub-request of a satellite
 			//connected to this server and the Message has at least one
 			//Tag that interests this server this will return true
-			retBool=receiveMsg(retVal);
+			retBool = receiveMsg(retVal);
 
 			//reset poll for rep-port
 			items[0].revents = 0;
@@ -169,7 +170,7 @@ bool ReefServer::subMessage(RMessage& retVal){
 
 		//resolve message at subscribe-socket
 		if (!retBool && (items[1].revents & ZMQ_POLLIN))
-		{	
+		{
 			//queue was not empty
 			queue_Not_Empty = true;
 
@@ -177,12 +178,12 @@ bool ReefServer::subMessage(RMessage& retVal){
 			std::string tagsStr = s_recv(subscriber);		//tags of message
 			CJsonArray tagsArray = jsonToArray(tagsStr);	//parse the json-String to CJsonArray
 			std::string bodyStr = s_recv(subscriber);		//real content of message	
-			
+
 			//parse the tags of the message and check for own and satellite interest
 			//body parsed only if needed
 			tagsInitMessage(retVal, tagsArray);
-		
-		
+
+
 			//reset poll for sub-port
 			items[1].revents = 0;
 
@@ -204,11 +205,12 @@ bool ReefServer::subMessage(RMessage& retVal){
 				//subscribe to pub of new reef-server
 				std::string adressConnectStr = "tcp://" + adressListStr;
 				subscriber.connect(adressConnectStr.c_str());
-				
-			} else { //check Message-Tags for own interest or interest of satellites
+
+			}
+			else { //check Message-Tags for own interest or interest of satellites
 				retBool = checkInterestAndProcess(retVal, bodyStr);
 			}
-		tagsArray.Clear();
+			tagsArray.Clear();
 		}
 	}
 
@@ -217,7 +219,7 @@ bool ReefServer::subMessage(RMessage& retVal){
 	if (!retBool)retVal.clear();
 
 	//return true if Message of interest has been found
-	return retBool; 
+	return retBool;
 }
 
 //checks	interest of this server in Message, returns true if interested
@@ -226,7 +228,7 @@ bool ReefServer::checkInterestAndProcess(RMessage& msg, std::string body){
 	bool retBool = false;
 
 	//If Tag identifies as Message of interest for this Coral return it
-	if (msg.containsAnyOf(tag_list)){ 
+	if (msg.containsAnyOf(tag_list)){
 		msg.initiateWithJson(body);
 		retBool = true;
 	}
@@ -234,7 +236,7 @@ bool ReefServer::checkInterestAndProcess(RMessage& msg, std::string body){
 	//If Tag identifies as Message of interest for at least one dependent Satellite
 	//save it in the Msgqueue for each Satellite with interest
 	//test if MAX_MESSAGES is reached and delete Messages/Queue if necessary
-	if (msg.containsAnyOf(satelliteAliases)){ 
+	if (msg.containsAnyOf(satelliteAliases)){
 		//the messages that will be sent
 		std::pair<std::string, std::string> msgPair = std::make_pair(msg.getTags(), body);
 
@@ -242,43 +244,41 @@ bool ReefServer::checkInterestAndProcess(RMessage& msg, std::string body){
 		//if there is the need to delete a complete queue its name will be saved in this vector to be deleted
 		//in satelliteAliases later, as we iterate over satelliteAliases and don't want to delete elements of it during the iteration
 		std::vector<std::string> toBeDeleted;
-		
+
 		for (std::vector<std::string>::iterator it = satelliteAliases.begin(); it != satelliteAliases.end(); ++it) {
 
 			//if a tag of the message corresponds with the current aka in satelliteAlliases
 			if (msg.containsAnyOf(*it)){
-				
+
 				//check for MAX_MESSAGES reached, returns empty string if no Queue had to be deleted
 				//otherwise returns name of queue that was deleted
 				std::string tmpAKA = checkForMaxMessages();
 
 				//if tmpAKA is not empty, save the name of the deleted Queue in toBeDeleted
-				if(!tmpAKA.empty())toBeDeleted.push_back(tmpAKA);
+				if (!tmpAKA.empty())toBeDeleted.push_back(tmpAKA);
 
 				//save the new Message in the q of the current SatelliteAlias
 				//saveMessage ignored calls to deleted Queues
-				saveMessage(*it, msgPair);	
+				saveMessage(*it, msgPair);
 			}
 		}
 
 		//finally delete the Aliases of the Queues that have been deleted in satAliases
 		/*
 		NOTE: This could result in horrible performance in WORST CASE, however it is really unlikely.
-			WORST CASE: 1.The Server has almost as many dependend Satellites (or even more) as MAX_MESSAGES 
-						2.CUR_MESSAGES is almost as high as MAX_MESSAGES
-						3.The Message has to be saved for (almost) all Satellites
-						4.All satellites were already on the watchlist
-
-			Then there would me many entries in the toBeDeleted vector, resulting in many 
-			satelliteAliases.erase(...) calls, each of which would result in copying all entries after the erased entry
-
-			NORMAL CASE: The Network is designed in a fashion that under normal circumstances 
-						1.the MAX_MESSAGES won't be reached
-						2.if the MAX_MESSAGES gets reached, the satellites have at leas enough time to get of the watchlist
-						3.there are not that many recipience of a Message, that a complete Deletion of the longest Queue 
-						still doesn't give enough space
-			In the NORMAL CASE toBeDeleted should have a maximum of 1 Entry, resulting in only 1 erase in satelliteAliases.
-			toBeDeleted is only a Vector to be secure even in WORST CASE
+		WORST CASE: 1.The Server has almost as many dependend Satellites (or even more) as MAX_MESSAGES
+		2.CUR_MESSAGES is almost as high as MAX_MESSAGES
+		3.The Message has to be saved for (almost) all Satellites
+		4.All satellites were already on the watchlist
+		Then there would me many entries in the toBeDeleted vector, resulting in many
+		satelliteAliases.erase(...) calls, each of which would result in copying all entries after the erased entry
+		NORMAL CASE: The Network is designed in a fashion that under normal circumstances
+		1.the MAX_MESSAGES won't be reached
+		2.if the MAX_MESSAGES gets reached, the satellites have at leas enough time to get of the watchlist
+		3.there are not that many recipience of a Message, that a complete Deletion of the longest Queue
+		still doesn't give enough space
+		In the NORMAL CASE toBeDeleted should have a maximum of 1 Entry, resulting in only 1 erase in satelliteAliases.
+		toBeDeleted is only a Vector to be secure even in WORST CASE
 		*/
 		for (std::vector<std::string>::iterator it = toBeDeleted.begin(); it != toBeDeleted.end(); ++it) {
 			satelliteAliases.erase(std::remove(satelliteAliases.begin(), satelliteAliases.end(), *it), satelliteAliases.end());
@@ -303,8 +303,8 @@ std::string ReefServer::halveOrDeleteLongestQ(){
 	//variables to safe information of longest Queue
 	std::string longestQ;
 	bool watchlist = false;
-	int qPosition=-1;
-	int qLength=-1;
+	int qPosition = -1;
+	int qLength = -1;
 
 	//finds the longest Message Queue and saves its information
 	for (iter = satMsgControlMap.begin(); iter != satMsgControlMap.end(); iter++){
@@ -333,7 +333,7 @@ std::string ReefServer::halveOrDeleteLongestQ(){
 
 		//erase the first half of satelliteMsgs[qPosition], which is a deque 
 		//to handle erasing the first entries more efficiently than a vector
-		satelliteMsgs[qPosition].erase(satelliteMsgs[qPosition].begin(), 
+		satelliteMsgs[qPosition].erase(satelliteMsgs[qPosition].begin(),
 			satelliteMsgs[qPosition].begin() + deleteAmount);
 
 		//update the controlMap of the Satellite with the new Queue Length and place it on the watchlist
@@ -350,7 +350,7 @@ void ReefServer::deleteSat(std::string aka, int qPosition){
 	//erase the Satellite out of the queue-handling vectors
 	satMsgControlMap.erase(aka);
 	satelliteMsgs.erase(satelliteMsgs.begin() + qPosition);
-	
+
 	//each Satellite with a higher qPosition then the deleted one has to adjust his Position by -1
 	for (iter = satMsgControlMap.begin(); iter != satMsgControlMap.end(); iter++){
 		if (iter->second.control[0] > qPosition) iter->second.control[0]--;
@@ -361,24 +361,24 @@ void ReefServer::deleteSat(std::string aka, int qPosition){
 void ReefServer::saveMessage(std::string aka, std::pair<std::string, std::string> msg){
 	//find satellite by alias in the map
 	auto search = satMsgControlMap.find(aka);
-	
+
 	if (search != satMsgControlMap.end()) { //if sat has been found
 
 		//get the Controlnumbers for this satellite
 		satelliteMsgControl& msgControl = search->second;
-		
+
 		int satPosition = msgControl.control[0];
-		
+
 		//insert msg at the back of the queue for this satellite
 		satelliteMsgs[satPosition].emplace_back(msg);
-		
+
 		//add 1 to the Number of Messages in this queue
 		search->second.control[1]++;
 
 		//add 1 to the sum of Messages in all queues
 		CUR_MESSAGES++;
 
-		}
+	}
 }
 
 
@@ -387,12 +387,12 @@ void ReefServer::tagsInitMessage(RMessage& msg, CJsonArray& array){
 	for (unsigned i = 0; i < array.Size(); i++)
 	{
 		std::string tagtmp = array[i]->ToString();
-		std::string tag= tagtmp.substr(1, tagtmp.size() - 2);
+		std::string tag = tagtmp.substr(1, tagtmp.size() - 2);
 		msg.addTag(tag);
 	}
 }
 
-/*	
+/*
 *	CJsonArray has not direct way to be parsed with a json-string
 *	This method builds a CJsonObject with an CJsonArray as Member and then extracts the array
 */
@@ -408,7 +408,7 @@ CJsonArray ReefServer::jsonToArray(std::string arrayString){
 
 /*
 *	C++, especially in vs13 has some Problems with initializing arrays in the constructor
-*	we don't want to initialize items[] everytime we poll, so the initialization got outsorced to 
+*	we don't want to initialize items[] everytime we poll, so the initialization got outsorced to
 *	here and the bool itemsSet is used to check befor each Poll if items[] is initialized
 */
 void ReefServer::itemsInit(){
@@ -431,13 +431,13 @@ bool ReefServer::receiveMsg(RMessage& msg){
 	case 2: //publish Messages for a dependent Satellite
 		aka = s_recv(rep);
 		resetWatchlist(aka);
-		retBool=pubRequest(msg);
+		retBool = pubRequest(msg);
 		s_send(rep, ""); //request socket of the satellite needs a reply to unblock
 		break;
 	case 3: //publish Messages for a dependent Satellite, reply with stored Messages for Satellite
-		 aka = s_recv(rep);	
-		 resetWatchlist(aka);
-		 retBool = pubRequest(msg);
+		aka = s_recv(rep);
+		resetWatchlist(aka);
+		retBool = pubRequest(msg);
 		//std::cout << "vor recRequest case 3" << std::endl;
 		recRequest(aka);
 		//std::cout << "nach recRequest" << std::endl;
@@ -451,7 +451,7 @@ bool ReefServer::receiveMsg(RMessage& msg){
 		break;
 	default: //TODO Throw Error?
 		break;
-	}	
+	}
 	return retBool;
 }
 
@@ -559,7 +559,7 @@ bool ReefServer::pubRequest(RMessage& msg){
 	CJsonArray tagsArray = jsonToArray(tagsStr); //parse Tags
 	tagsInitMessage(msg, tagsArray); //initiate msg with the tags
 	tagsArray.Clear();
-	
+
 	retBool = checkInterestAndProcess(msg, bodyStr);
 	s_sendmore(publisher, ""); //send empty envelope
 	s_sendmore(publisher, tagsStr);	//receive tag-part of message and publish it
@@ -593,7 +593,8 @@ void ReefServer::recRequest(std::string aka){
 			msgControl.control[1]--; //lower the count of stored Messages by 1	
 			CUR_MESSAGES--;
 		}
-	}else{
+	}
+	else{
 		s_send(rep, "-1");
 	}
 

@@ -42,7 +42,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\Message;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\jsonplus-0.2.0\src\include;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\zeromq-4.1.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\Message;C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Carlo und Britta\Documents\Visual Studio 2013\Projects\FP_Tests\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -56,8 +56,9 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions);DIGITALREEFDLL_EXPORTS</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -93,7 +94,6 @@
     <ClInclude Include="RMessageTags.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="OlderMain.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="ReefServer.cpp" />
     <ClCompile Include="ReefSatellite.cpp" />

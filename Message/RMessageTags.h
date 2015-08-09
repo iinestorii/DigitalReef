@@ -34,10 +34,8 @@ protected:
 
 	void clear();
 private:
-	int CUR_SIZE=1;
+	int CUR_SIZE = 1;
 	int MAX_SIZE = 70;
 	CJsonArray json_array;
 };
 #endif
-
-

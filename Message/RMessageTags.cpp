@@ -17,6 +17,8 @@ RMessageTags::RMessageTags(const RMessageTags * tags){
 }
 
 int RMessageTags::addTag(std::string tag){
+	std::string sys_msg = "SYS_newMember";
+	if (tag == sys_msg)return -1;
 	int futureSize = CUR_SIZE + tag.size() + 3;
 	if (futureSize <= MAX_SIZE){
 		CUR_SIZE = futureSize;

@@ -30,7 +30,7 @@ public:
 private:
 
 	std::string identity;
-	unsigned int waitingMsgs=0; //Number of Messages in stack at Server waiting to be reveived by this Satellite
+	unsigned int waitingMsgs = 0; //Number of Messages in stack at Server waiting to be reveived by this Satellite
 	//ZeroMQ context and sockets for the network
 	zmq::context_t context;
 	zmq::socket_t req;
@@ -39,7 +39,7 @@ private:
 	bool receiveMessage(RMessage&);
 	bool findTag(std::string);
 	void connectRequest(std::string, std::string);
-	const CJsonArray jsonToArray(std::string);
+	CJsonArray jsonToArray(std::string);
 	void tagsInitMessage(RMessage& msg, CJsonArray& array);
 
 };

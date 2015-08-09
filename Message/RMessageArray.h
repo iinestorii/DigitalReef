@@ -29,7 +29,7 @@ public:
 	void addInnerBody(RMessageBody&);
 	void addArray(RMessageArray&);
 	CJsonArray getArray();
-	
+
 	std::string toString();
 	RMessageArray();
 	~RMessageArray();
@@ -50,7 +50,3 @@ private:
 
 };
 #endif
-
-
-
-

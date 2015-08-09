@@ -29,8 +29,8 @@ public:
 	void removeTag(std::string);
 	void pubMessage(RMessage&);
 	bool subMessage(RMessage&);
-	
-	
+
+
 
 private:
 	//struct needed to add Array to Map, as array has no copy-constructor
@@ -53,7 +53,7 @@ private:
 	// satelliteMsgs[Satellite][ <tags>, <body> ]
 	// Because of the deletion of the first halfe of the biggest Message Queue when MAX_MESSAGES is reached
 	// a deque is used instead of a vector to enable efficient deletion at the beginning of the queue
-	std::vector< std::deque<std::pair<std::string, std::string> > > satelliteMsgs; 
+	std::vector< std::deque<std::pair<std::string, std::string> > > satelliteMsgs;
 
 	std::map<std::string, satelliteMsgControl> satMsgControlMap; //Control Numbers concerning the work on the satelliteMsgs
 
@@ -65,7 +65,7 @@ private:
 	zmq::socket_t rep;
 
 	//ZeroMQ required attributes to check for new incoming Messages
-	bool itemsSet=false;
+	bool itemsSet = false;
 	zmq::pollitem_t items[2];
 
 	//Methods for ZeroMQ connectivity, test of Messages
@@ -75,7 +75,7 @@ private:
 	void connectSubscribe();
 	CJsonArray jsonToArray(std::string);
 	void tagsInitMessage(RMessage&, CJsonArray&);
-	
+
 	bool checkInterestAndProcess(RMessage&, std::string); //checks own and Satellite interest in RMessage and processes it acordingly
 	bool receiveMsg(RMessage&);
 	int getReceiveMsgMode();

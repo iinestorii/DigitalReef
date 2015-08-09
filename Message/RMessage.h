@@ -49,10 +49,11 @@ public:
 	RMessage();
 	~RMessage();
 	RMessage(const RMessage * value);
+	void clear();
 
 protected:
 	void initiateTagsWithArray(CJsonArray*);
-	void clear();
+	
 	void initiateWithJson(std::string);
 
 private:
@@ -61,4 +62,3 @@ private:
 
 };
 #endif
-

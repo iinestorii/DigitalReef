@@ -59,10 +59,10 @@ protected:
 	void clear();
 private:
 	CJsonObject json_object;
-	
+
 
 	int CUR_SIZE = 1;
-	int MAX_SIZE=4930;
+	int MAX_SIZE = 4930;
 
 	int caseString(std::string);
 	int caseBool(std::string);
@@ -71,5 +71,3 @@ private:
 	int caseArray(std::string);
 };
 #endif
-
-

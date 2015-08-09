@@ -3,248 +3,277 @@
 #include "RMessageArray.h"
 #include <iostream>
 #include <string>
-#include <Reef.h>
+#include <ReefServer.h>
 #include <ReefSatellite.h>
 
 int main(int argc, char *argv[]){
-	
-	int version = 0;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/*
-	std::string testString = "\"\"\"\"\"";
-	std::cout << testString<< ", size: "<<testString.size()<< std::endl;
+	There are different use cases in this Main.cpp to highlight some of the capabilities of the Digital-Reef
+	Depending on the value of int switcher this will compile 1 of 7 different ReefServer/Satellites, these are
+	examples and their switcher values:
 
-	CJsonObject objTest;
-	objTest.AddPare("key", true);
-	std::string testStringObject = objTest.ToString();
-	std::cout << testStringObject << ", size: " << testStringObject.size() << std::endl;
+	PingPong-Example
+	switcher = 0	PingPong-Server
+	switcher = 1	Pinger-Server, initializes the Reef
+
+	MaxMessageLength-Example:
+	switcher = 2	Builds and tests Message with max length
+
+	Worker-Example
+	switcher = 3	server1, initializes the Reef
+	switcher = 4	satellit2
+	switcher = 5	server2
+	switcher = 6	satellit1
+
+	More specific information can be found in the comments at the examples
+	or in the appendix of the corresponding paper to this project
+	
 	*/
-	RMessage rmessage;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	std::string key0= "key";
-	std::string str= "valdfgdgdgdgdg";
 
-	bool boo = true;
+	int switcher = 1; //switches witch example will be compiled
 
-	int inte = 999;
+	/*
+	PingPong-Example:
+	PingPong-Server,answers to messages ping with pong, and messages pong with ping
+	*/
+	if (switcher == 0){	
+		ReefServer ppServer;
 
-	RMessageBody inBody;
-	inBody.addSimplex("key001", "valsdfgfgfgfgfgfgfgfgfgfgue");
-	inBody.addSimplex("key002", false);
-	inBody.addSimplex("key001", 999999999);
+		//initiate the Server with his name, ip, port of publish- and port of reply-socket
+		ppServer.initiate("PingPong", "127.0.0.1", "5567", "5569");
 
-	RMessageArray inArray;
-	inArray.addSimplex("value");
-	inArray.addSimplex(false);
-	inArray.addSimplex(9999);
-	std::string tempStr;
-
-	int answer = 0;
-	rmessage.addTag("sat1");
-	for (int i = 0; i <5; i++){
-	
-		if (i < 100){
-			
-			tempStr = key0 +  std::to_string(i);
-			answer=rmessage.addSimplex(tempStr, str);
-		}
-		else if (i < 200){
-			tempStr = key0 + std::to_string(i);
-			answer = rmessage.addSimplex(tempStr, boo);
-		}
-		else if (i < 300){
-			tempStr = key0 + std::to_string(i);
-			answer = rmessage.addSimplex(tempStr, inte);
-		}
-		else if (i < 400){
-			tempStr = key0 + std::to_string(i);
-			answer = rmessage.addInnerBody(tempStr, inBody);
-		}
-		else{
-			tempStr = key0 + std::to_string(i);
-			answer = rmessage.addArray(tempStr, inArray);
-		}
-		if (answer == -1){
-			std::cout << "body of message full!" << std::endl;
-			answer = 0;
-		}
-		
-	}
-
-	std::cout << "getSize(): " << rmessage.getBody().size() << std::endl;
-
-	if (version == 6){
-		/* Server big Message test*/
-		Reef testReef;
-
-		testReef.initiate("Start", "127.0.0.1", "5567", "5569");
-		testReef.connect("Server2", "127.0.0.1:5567", "127.0.0.1:5565");
+		//connect to pinger-server at adress "127.0.0.1:5565" with alias PingPong and own publisher-adress
+		ppServer.connect("PingPong", "127.0.0.1:5567", "127.0.0.1:5565");
 		std::cout << "Reef connected" << std::endl;
+		//ppServer is now a full member of the Reef
 
-		testReef.addTag("crunchedNumbers");
-		
+		//Add tags that interest him, Messages with these tags will be received
+		ppServer.addTag("Ping");
+		ppServer.addTag("Pong");
+
+		//build 2 Messages as replies to incoming pings or pongs
+		RMessage pongAntwort;
+		RMessage pingAntwort;
+		pongAntwort.addTag("pongAntwort");
+		pongAntwort.addSimplex("Antwort", "Ping!");
+		pingAntwort.addTag("pingAntwort");
+		pingAntwort.addSimplex("Antwort", "Pong!");
+
+		//empty message to receive an interesting message
+		RMessage message;
+
+		//main loop
 		while (true){
-			testReef.pubMessage(rmessage);
-			Sleep(100);
-		}
-
-		/*Server big Message test*/
-	}
-
-	else if (version == 5){ //big message test
-		/* Satellite1*/
-		ReefSatellite sat;
-		RMessage subMessage1;
-
-		sat.connect("sat1", "127.0.0.1:5565"); //initiate version rep-port
-		std::cout << "Sat connected to Reef" << std::endl;
-
-		while (true){
-			if (sat.receive(subMessage1)){
-
-				std::cout << "message received" << std::endl;
-			}
-			Sleep(4000);
-
-		}
-	}
-
-	
-	else if (version == 4){
-		/*Satellite2*/
-		ReefSatellite sat;
-		RMessage pubMessage1;
-
-		sat.connect("Sat2", "127.0.0.1:5573"); //initiate version rep-port
-		std::cout << "Sat connected to Reef" << std::endl;
-		int i = 0;
-
-		while (true){
-			pubMessage1.addTag("Numbers2Crunch");
-			pubMessage1.addTag("Sat1");
-			pubMessage1.addSimplex("num1", 1);
-			pubMessage1.addSimplex("num2", 2);
-			pubMessage1.addSimplex("msgCount", ++i);
-
-			sat.pub(pubMessage1);
-			Sleep(700);
-			pubMessage1 = RMessage();
-		}
-		/*Satellite2*/
-	}
-
-	else if (version == 3){
-		/* Satellite1*/
-		ReefSatellite sat;
-		RMessage subMessage1;
-		RMessage pubMessage1;
-
-		sat.connect("Sat1", "127.0.0.1:5565"); //initiate version rep-port
-		std::cout << "Sat connected to Reef" << std::endl;
-
-		int tmp;
-		bool pub = false;
-
-		while (true){
-			if (sat.receive(subMessage1)){
-				if (subMessage1.containsAnyOf("Numbers2Crunch")){
-					pub = true;
-					std::cout << "Numbers to crunch: " << subMessage1.getInt("num1") << " + " << subMessage1.getInt("num2") << std::endl;
-					std::cout << "Crunching ...." << std::endl;
-					Sleep(4000);
-					tmp = subMessage1.getInt("num1") + subMessage1.getInt("num2");
-					pubMessage1.addTag("crunchedNumbers");
-					pubMessage1.addSimplex("Numbers", tmp);
-					sat.pub(pubMessage1);
+			if (ppServer.subMessage(message)){ //true = RMessage received and stored in message
+				if (message.containsAnyOf("Ping")){ //if it's a ping Message
+					ppServer.pubMessage(pingAntwort); //publish a pong
 				}
-				else {
-					std::cout << "FAILURE: Sat1 Received wrong message" << std::endl;
+				else if (message.containsAnyOf("Pong")){ //if it's a pong Message
+					ppServer.pubMessage(pongAntwort); //publish a ping
 				}
-				pubMessage1 = RMessage();
-			}
-			else{
-				Sleep(4000);
-			}
-
-
-		}
-		/* Satellite1*/
-	}
-
-
-
-	else if (version == 2){
-		/* Server 3*/
-		Reef testReef;
-		RMessage subMessage1;
-		RMessage pubMessage1;
-
-		testReef.initiate("Start", "127.0.0.1", "5571", "5573");
-		std::cout << "Reef initiated" << std::endl;
-
-		testReef.connect("Server3", "127.0.0.1:5571", "127.0.0.1:5569");
-		std::cout << "Reef connected" << std::endl;
-
-
-		pubMessage1.addTag("server3tag");
-		pubMessage1.addSimplex("server3key", "server3data");
-
-
-
-		while (true){
-			testReef.subMessage(subMessage1);
-			testReef.pubMessage(pubMessage1);
-			Sleep(700);
-		}
-
-		/*Server 3*/
-	}
-	else if (version == 1){
-		/* Server 2*/
-		Reef testReef;
-		RMessage subMessage1;
-
-		testReef.initiate("Start", "127.0.0.1", "5567", "5569");
-		testReef.connect("Server2", "127.0.0.1:5567", "127.0.0.1:5565");
-		std::cout << "Reef connected" << std::endl;
-
-		testReef.addTag("crunchedNumbers");
-
-		while (true){
-			while (testReef.subMessage(subMessage1)){
-				if (subMessage1.containsAnyOf("crunchedNumbers")){
-					std::cout << "Received crunched Numbers: " << subMessage1.getInt("Numbers") << std::endl;
-				}
-				else {
+				else{
+					//ReefServer::subMessage only returns with Messages to corosponding Tags in the Tag-List
 					std::cout << "We should never get here" << std::endl;
 				}
 			}
 		}
-
-		/*Server 2*/
 	}
-	else if (version == 0){
-		/* Server 1*/
-		Reef testReef;
-		RMessage subMessage;
 
-		testReef.initiate("Server1", "127.0.0.1", "5563", "5565");
+	/*
+	PingPong-Example:
+	Pinger-Server,sends pings and pongs and prints answers
+	*/
+	else if (switcher == 1){		 /* Pinger*/
+		ReefServer pinger;
+		//initiate the Reef
+		pinger.initiate("Pinger", "127.0.0.1", "5563", "5565");
 		std::cout << "Reef initiated" << std::endl;
 
-		testReef.addTag("server3tag");
+		//build the ping and pong messages
+		RMessage ping;
+		RMessage pong;
+		ping.addTag("Ping");
+		pong.addTag("Pong");
+		ping.addSimplex("key1", "body1");
+		pong.addSimplex("key1", "body1");		
 
+		//Tags of Messages that interest pinger
+		pinger.addTag("pingAntwort");
+		pinger.addTag("pongAntwort");
+		
+		//empty Message to story interesting Messages
+		RMessage subMessage;
 		while (true){
-			if (testReef.subMessage(subMessage)){
-				if (subMessage.containsAnyOf("server3tag")){
-					std::cout << "Received Message from Server 3!" << std::endl;
+			//as Long as there are Messages waiting at the Subscribe-Socket
+			while(pinger.subMessage(subMessage)){
+					std::cout << "received :" << subMessage.getString("Antwort") << std::endl;
+			}
+			//send the pings and pongs
+			pinger.pubMessage(ping);
+			pinger.pubMessage(pong);
+			Sleep(200);
+		}
+	}
+
+	/*
+	MaxMessageLength-Example:
+	Builds a Message until it's full, tests if it's size in in allowed range
+	*/
+	else if (switcher == 2){ //Max length Message test
+		RMessage rmessage;				//Message we want to fill
+		rmessage.addTag("test");
+
+		std::string key0 = "key";
+
+		//Stuff we want to fill rmessage with:
+		std::string str = "valdfgdgdgdgdg";  //some string
+		bool boo = true;					//some bool
+		int inte = 999;						//some int
+		RMessageBody inBody;				//some inner RMessageBody
+		inBody.addSimplex("key001", "valsdfgfgfgfgfgfgfgfgfgfgue");
+		inBody.addSimplex("key002", false);
+		inBody.addSimplex("key001", 999999999); //test same key-detection
+		RMessageArray inArray;			// some RMessageArray
+		inArray.addSimplex("value");
+		inArray.addSimplex(false);
+		inArray.addSimplex(9999);
+
+
+		std::string tempStr; //String we use to build new keys for eacht iteration of the loop
+		int answer = 0;		 //if answer==-1 then rmessage full and we cant add any more
+		
+		for (int i = 0; i <500; i++){	//main-loop
+
+			if (i < 100){	//the first 100 iterations add a string
+				tempStr = key0 + std::to_string(i); //build a new key
+				answer = rmessage.addSimplex(tempStr, str); //add the string, store returnValue in answer
+			}
+			else if (i < 200){ //same as i<100 but with a bool
+				tempStr = key0 + std::to_string(i);
+				answer = rmessage.addSimplex(tempStr, boo);
+			}
+			else if(i<300){ //same as i<100 but with an int
+				tempStr = key0 + std::to_string(i);
+				answer = rmessage.addSimplex(tempStr, inte);
+			}
+			else if (i < 400){ //same as i<100 but with an innerBody
+				tempStr = key0 + std::to_string(i);
+				answer = rmessage.addInnerBody(tempStr, inBody);
+			}
+			else { //same as i<100 but with an Array
+				tempStr = key0 + std::to_string(i);
+				answer = rmessage.addArray(tempStr, inArray);
+			}
+
+			if (answer == -1){ //the Message is full and forbids further adding of key/values
+				std::cout << "body of message full!" << std::endl;
+				break;
+			}
+
+		}
+		std::cout << "Should be below 4920, getSize(): " << rmessage.getBody().size() << std::endl;
+		Sleep(10000);
+	}
+
+	/*	
+		Worker-Example: 
+		Server 1, just sits there and lets Satellites connect to him, handles there Messages 
+	*/
+	else if (switcher == 3){		 
+		ReefServer server1;
+		server1.initiate("server1", "127.0.0.1", "5563", "5565");
+		std::cout << "Reef initiated" << std::endl;
+
+		RMessage subMessage;
+		while (true){
+			server1.subMessage(subMessage);
+		}
+	}
+
+	/*
+	Worker-Example:
+	Satellite 2, connects to Server1 and sends a Message with Numbers to crunch every 700ms
+	which will be reveived and worked on by the workers
+	*/
+	else if (switcher == 4){
+		ReefSatellite sat2;
+		//connect the satellite to server1
+		sat2.connect("Sat2", "127.0.0.1:5565");
+		std::cout << "Sat connected to Reef" << std::endl;
+
+		//build the workOrder
+		RMessage pubMessage1;
+		pubMessage1.addTag("Numbers2Crunch");
+		pubMessage1.addTag("Sat1"); //This will trigger Server 1 to safe the Message in the Queue for Sat1
+		pubMessage1.addSimplex("num1", 1);
+		pubMessage1.addSimplex("num2", 2);		
+		int i = 0;
+	
+		while (true){
+			//add value of workOrder-counter i to message
+			pubMessage1.addSimplex("msgCount", ++i); //overwrites the old value
+			std::cout << "WorkOrder sent!" << std::endl;
+			//publish the workorder
+			sat2.pub(pubMessage1);
+			Sleep(1000);
+		}
+	}
+	/*
+	Worker-Example:
+	Server 2, connects to Server1 and waits for the results of the workers
+	*/
+	if (switcher == 5){				
+		ReefServer printer;
+		printer.initiate("printer", "127.0.0.1", "5567", "5569");
+		printer.connect("printer", "127.0.0.1:5567", "127.0.0.1:5565");
+		printer.addTag("Result");
+		RMessage message;
+		while (true){
+			if (printer.subMessage(message)){
+				if (message.containsAnyOf("Result")){
+					std::cout << "Result " << message.getInt("number") << " received: " << message.getInt("result")<< std::endl;
+				}				
+				else{
+					std::cout << "We should never get here!" << std::endl; //subMessage should only return Messages with "Result" as tag
 				}
 			}
-			//subMessage.clear();
-			
 		}
-
-
-		/*Server 1*/
 	}
+
+	/*
+	Worker-Example:
+	Satellite 1, used as Worker, connects to Server1 and waits for the workorders sent by satellite2
+	Crunches the numbers and sends out the result, which will be documented by Server2
+	5 Workers should be enough to handle the incoming workOrders
+	*/
+	else if (switcher == 6){
+		ReefSatellite sat1;
+		sat1.connect("Sat1", "127.0.0.1:5565");
+		std::cout << "Sat connected to Reef" << std::endl;
+
+		//result of workOrder, will be printed by Server2
+		RMessage pubMessage1;		
+		pubMessage1.addTag("Result");
+
+		RMessage workOrder;
+		while (true){
+			if (sat1.receive(workOrder)){
+				int i = workOrder.getInt("num1"); //get the numbers
+				int j = workOrder.getInt("num2");
+				std::cout << "Crunching some Numbers...." << std::endl;
+				Sleep(5000); //crunching some highly complex numbers...
+				int result = j + i;
+				pubMessage1.addSimplex("number", workOrder.getInt("msgCount")); //overwrites the old value, forwards the OrderCount
+				pubMessage1.addSimplex("result",result);
+				sat1.pub(pubMessage1); //sends pubReques to Server1 who handles the publishing
+				std::cout << "Result sent!" << std::endl;
+			}
+		}
+	}
+
 	return 0;
 }
 

@@ -17,6 +17,7 @@ int RMessageBody::addSimplex(std::string key, char * value){
 }
 
 int RMessageBody::addSimplex(std::string key, int value){
+	if (value < 0)return -1; //json-plus can't handle negative integers
 	int oldValueSize = getPredLength(key); // 0 if no entry found with key 'key', length of value stored under key otherwise
 	int futureSize;
 	if (oldValueSize){
@@ -203,7 +204,7 @@ void RMessageBody::initiateWithJson(std::string json){
 *//////////////////////////////////////////////////
 
 void RMessageBody::setJsonObject(std::string json){
-	json_object = new CJsonObject(CJsonParser::Execute((jstring)json));
+	json_object = *CJsonParser::Execute((jstring)json);
 	CUR_SIZE = json.size();
 }
 
